@@ -12,7 +12,7 @@ export const ARISTAS = proyecto.aristas as Record<string, Arista>;
 export const P = (code: string): LngLat => [NODOS[code].lon, NODOS[code].lat];
 export const NOMBRE = (code: string) => NODOS[code].nombre;
 
-// paleta de la referencia (problemaskennedy) más el azul hídrico y el naranja de circularidad
+// paleta de la referencia (problemaskennedy) más azul hídrico, naranja circularidad y púrpura social
 export const COLORS = {
   cream: '#ebe5d9',
   water: '#6ea8d6',
@@ -21,10 +21,11 @@ export const COLORS = {
   orange: '#e6956a',
   grey: '#b4b4b4',
   bio: '#f0f0f0',
+  social: '#c084fc',
   ink: '#0a0a0a',
 };
 
-export type ModelId = 'eco' | 'hid' | 'reg' | 'com' | 'cir' | 'lim' | 'bio';
+export type ModelId = 'eco' | 'hid' | 'reg' | 'com' | 'cir' | 'lim' | 'bio' | 'soc';
 
 export interface Model {
   id: ModelId;
@@ -53,15 +54,28 @@ export const MODELS: Model[] = [
     text: 'Las actividades económicas y los sistemas de movilidad deben ajustarse a la capacidad ecológica del territorio.' },
   { id: 'bio', n: '07', title: 'Biocéntrico', short: 'Biocéntrico', color: COLORS.bio, ink: '#0a0a0a', appear: 7, role: 'Criterio transversal de evaluación',
     text: 'La continuidad de las distintas formas de vida como criterio para orientar las transformaciones territoriales.' },
+  { id: 'soc', n: '08', title: 'Social y Política Humana', short: 'Social y Gobernanza', color: COLORS.social, ink: '#180728', appear: 8, role: 'Agencia de actores y gobernanza policéntrica',
+    text: 'Desacoplar la decisión formal de la ejecución comunitaria: organización de actores, incentivos y co-custodia para cumplir los macromodelos.' },
 ];
 export const MODEL = Object.fromEntries(MODELS.map((m) => [m.id, m])) as Record<ModelId, Model>;
 
-export const STEP_LABELS = ['Ecocéntrico', 'Hidrocéntrico', 'Red hídrica', 'Regenerativo', 'Comercio ecológico', 'Circularidad', 'Límites ecológicos', 'Biocéntrico', 'Red propia'];
+export const STEP_LABELS = [
+  'Ecocéntrico',
+  'Hidrocéntrico',
+  'Red hídrica',
+  'Regenerativo',
+  'Comercio ecológico',
+  'Circularidad',
+  'Límites ecológicos',
+  'Biocéntrico',
+  'Social y gobernanza',
+  'Red propia',
+];
 export const N = STEP_LABELS.length;
 
 // índice de cada macromodelo en la columna (la cámara vertical sigue al activo)
-export const SPINE: ModelId[] = ['eco', 'hid', 'reg', 'com', 'cir', 'lim', 'bio'];
-export const ACTIVE_BY_BEAT = [0, 1, 1, 2, 3, 4, 5, 6, -1];
+export const SPINE: ModelId[] = ['eco', 'hid', 'reg', 'com', 'cir', 'lim', 'bio', 'soc'];
+export const ACTIVE_BY_BEAT = [0, 1, 1, 2, 3, 4, 5, 6, 7, -1];
 
 // puntos del territorio (todos con coordenadas del Excel del proyecto)
 export const GEO = {
@@ -80,6 +94,10 @@ export const GEO = {
   tingua: { ll: P('BIO01'), label: 'Tingua bogotana' },
   vuelo: { ll: P('BIO06'), label: 'Corredores de avifauna' },
   magdalena: { ll: P('EEP08'), label: 'Canal Magdalena' },
+  alcaldia: { ll: P('ACT05'), label: 'Alcaldía Local · SDA / EAAB' },
+  jac: { ll: P('ACT02'), label: 'JAC Kennedy · Liderazgo meso' },
+  colectivos: { ll: P('ACT01'), label: 'Colectivos Ambientales' },
+  planeacion: { ll: P('ACT06'), label: 'SDP · Decisión macro' },
 } as const;
 export type GeoId = keyof typeof GEO;
 
@@ -101,6 +119,7 @@ export const BOUNDS = {
   humedales: [-74.168, 4.622, -74.136, 4.652] as [number, number, number, number],
   corabastos: [-74.1735, 4.6125, -74.1395, 4.6405] as [number, number, number, number],
   nucleo: [-74.1745, 4.6175, -74.1285, 4.6595] as [number, number, number, number],
+  social: [-74.1750, 4.6150, -74.1330, 4.6520] as [number, number, number, number],
 };
 
 export const CYCLE = [

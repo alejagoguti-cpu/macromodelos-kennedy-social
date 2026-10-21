@@ -1,8 +1,9 @@
 {
-  "name": "macromodelos-kennedy",
+  "name": "macromodelos-kennedy-social",
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "description": "Macromodelos territoriales de Kennedy articulados con el Macromodelo Social y Dinámica de Agentes",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

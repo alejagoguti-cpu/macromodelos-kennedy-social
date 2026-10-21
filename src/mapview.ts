@@ -74,9 +74,9 @@ export class MapView {
     this.set('rio', 'line-opacity', hidK ? 0.85 : 0, hidK ? 2200 : 0, 1200);
     this.set('canal', 'line-opacity', hidK ? 0.6 : 0, hidK ? 2600 : 0, 1200);
     this.set('otros-f', 'fill-opacity', hidK ? 0.12 : 0, hidK ? 2400 : 0);
-    const reg = (beat >= 3 && beat <= 7) || (beat === 8 && (all || sel === 'reg' || sel === 'eco')) ? 0.5 : 0;
+    const reg = (beat >= 3 && beat <= 8) || (beat === 9 && (all || sel === 'reg' || sel === 'eco' || sel === 'soc')) ? 0.5 : 0;
     this.set('rondas', 'line-opacity', reg, reg ? 900 : 0);
-    const vias = beat === 6 || beat === 7 || (beat === 8 && (all || sel === 'lim' || sel === 'com')) ? 1 : 0;
+    const vias = beat === 6 || beat === 7 || beat === 8 || (beat === 9 && (all || sel === 'lim' || sel === 'com' || sel === 'soc')) ? 1 : 0;
     this.set('vias', 'line-opacity', vias ? 0.85 : 0, 300);
     this.set('vias2', 'line-opacity', vias ? 0.55 : 0, 500);
   }

@@ -3,32 +3,66 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
-import { ArrowLeft, ArrowRight, Bird, Droplets, Gauge, Leaf, MousePointerClick, Network, PackagePlus, Plane, Recycle, Route, ShoppingBasket, Sprout, Store, Trash2, Truck, Users, Waves, Wheat, Zap, Link2, Building2 } from 'lucide-react';
+import {
+  ArrowLeft, ArrowRight, Bird, Droplets, Gauge, Leaf, MousePointerClick,
+  Network, PackagePlus, Plane, Recycle, Route, ShoppingBasket, Sprout,
+  Store, Trash2, Truck, Users, Waves, Wheat, Zap, Link2, Building2,
+  Activity, X, Sliders
+} from 'lucide-react';
 import type { LngLat } from './content';
-import { ACTIVE_BY_BEAT, BOUNDS, COLORS, CYCLE, CYCLE_PROPOSED, GEO, MODEL, MODELS, N, SPINE, STEP_LABELS, type GeoId, type ModelId } from './content';
+import {
+  ACTIVE_BY_BEAT, BOUNDS, COLORS, CYCLE, CYCLE_PROPOSED, GEO,
+  MODEL, MODELS, N, SPINE, STEP_LABELS, type GeoId, type ModelId
+} from './content';
 import { CONNS, REL_TEXT, type Conn } from './conns';
 import { MapView, type Pad } from './mapview';
 import { Kennedy3D } from './kennedy3d';
+import { SocialSimView } from './SocialSimView';
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 // las animaciones siguen el reloj real aunque el 3D vaya más lento
 gsap.ticker.lagSmoothing(0);
 
 const ICONS: Record<ModelId, ReactElement> = {
-  eco: <Leaf />, hid: <Droplets />, reg: <Sprout />, com: <Store />, cir: <Recycle />, lim: <Gauge />, bio: <Bird />,
+  eco: <Leaf />,
+  hid: <Droplets />,
+  reg: <Sprout />,
+  com: <Store />,
+  cir: <Recycle />,
+  lim: <Gauge />,
+  bio: <Bird />,
+  soc: <Users />,
 };
-// cada punto del territorio se marca con un ícono de su sistema (hídrico, movilidad, comercio, fauna...)
+
+// cada punto del territorio se marca con un ícono de su sistema
 const GEO_ICON: Record<GeoId, ReactElement> = {
-  burro: <Droplets />, vaca: <Droplets />, techo: <Droplets />, hub: <Sprout />, fucha: <Waves />, corabastos: <Store />, patio: <Users />,
-  cali: <Route />, americas: <Route />, calle13: <Truck />, aero: <Plane />, tintal: <Building2 />, tingua: <Bird />, vuelo: <Bird />, magdalena: <Waves />,
+  burro: <Droplets />,
+  vaca: <Droplets />,
+  techo: <Droplets />,
+  hub: <Sprout />,
+  fucha: <Waves />,
+  corabastos: <Store />,
+  patio: <Users />,
+  cali: <Route />,
+  americas: <Route />,
+  calle13: <Truck />,
+  aero: <Plane />,
+  tintal: <Building2 />,
+  tingua: <Bird />,
+  vuelo: <Bird />,
+  magdalena: <Waves />,
+  alcaldia: <Building2 />,
+  jac: <Users />,
+  colectivos: <Sprout />,
+  planeacion: <Gauge />,
 };
+
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ------------------------------------------------------------ disposición de las tarjetas por secuencia
 // red final: Hidrocéntrico al centro, el campo Ecocéntrico alrededor, la cadena de transformación en triángulo
-// y los criterios transversales (Límites, Biocéntrico) como anillos que envuelven todo
+// y los criterios transversales (Límites, Biocéntrico, Social/Gobernanza) como anillos y nodos orbitales
 function orbit(W: number, H: number, m: boolean, shift = false) {
-  // al explorar, la red se desplaza a la izquierda y el territorio queda libre a la derecha
   const sh = shift && !m;
   const mx = shift && m;
   const u = mx ? Math.min(W * 0.45, (H * 0.56 - 96) / 2) : m ? Math.min(W * 0.45, (H - 250) / 2) : sh ? Math.min(W * 0.255, (H - 170) / 2) : Math.min(W * 0.46, (H - 150) / 2);
@@ -36,7 +70,14 @@ function orbit(W: number, H: number, m: boolean, shift = false) {
   const at = (R: number, deg: number) => ({ x: cx + R * Math.cos((deg * Math.PI) / 180), y: cy + R * Math.sin((deg * Math.PI) / 180) });
   const Rb = u * 0.98, Rl = u * 0.82, Re = u * 0.64, Rt = u * (m ? 0.46 : 0.4);
   const pos: Record<ModelId, { x: number; y: number }> = {
-    hid: { x: cx, y: cy }, eco: at(Re, -90), reg: at(Rt, -150), com: at(Rt, -30), cir: at(Rt, 90), lim: at(Rl, 42), bio: at(Rb, -138),
+    hid: { x: cx, y: cy },
+    eco: at(Re, -90),
+    reg: at(Rt, -150),
+    com: at(Rt, -30),
+    cir: at(Rt, 90),
+    lim: at(Rl, 42),
+    bio: at(Rb, -138),
+    soc: at(Rl, 138),
   };
   return { u, cx, cy, Rb, Rl, Re, Rt, pos };
 }
@@ -46,27 +87,25 @@ interface St { x: number; y: number; o: number; s: number; w: number; compact: b
 function layout(b: number, W: number, H: number, m: boolean, shift = false): Record<string, St> {
   const L: Record<string, St> = {};
   const cw = m ? Math.min(W * 0.9, 380) : 340;
-  const nw = m ? W * 0.58 : 232;
   const sx = m ? W * 0.5 : W * 0.2;
-  const gap = m ? 150 : 150;
-  const y0 = m ? 104 : 132;
+  const gap = m ? 140 : 140;
+  const y0 = m ? 104 : 124;
   const act = ACTIVE_BY_BEAT[b];
   const target = H * (m ? (H < 720 ? 0.32 : 0.36) : 0.44);
-  const cam = b >= 8 ? 0 : Math.min(0, target - (y0 + Math.max(act, 0) * gap));
-  const netY: Record<ModelId, number> = { bio: 0.165, eco: 0.335, hid: 0.455, reg: 0.565, com: 0.655, cir: 0.745, lim: 0.85 };
-  const netX = m ? W * 0.3 : W * 0.17;
+  const cam = b >= 9 ? 0 : Math.min(0, target - (y0 + Math.max(act, 0) * gap));
+
   SPINE.forEach((id, i) => {
     const mod = MODEL[id];
     const vis = b >= mod.appear && !(b === 0);
-    if (b >= 8) {
+    if (b >= 9) {
       const p = orbit(W, H, m, shift).pos[id];
-      L[id] = { x: p.x, y: p.y + (m ? 14 : 22), o: 1, s: 1, w: m ? 96 : 140, compact: true, orb: true, d: 0.15 + i * 0.1 };
+      L[id] = { x: p.x, y: p.y + (m ? 14 : 22), o: 1, s: 1, w: m ? 96 : 140, compact: true, orb: true, d: 0.15 + i * 0.08 };
     } else {
       // la tarjeta activa va completa; las anteriores quedan como fichas compactas que suben
-      const ya = Math.max(y0 + 60, target);
-      const y = i === act ? ya : i < act ? ya - 132 - (act - i - 1) * 102 : ya + 140;
-      const o = !vis ? 0 : i === act ? 1 : Math.max(0.28, 0.7 - (act - i) * 0.14);
-      const fade = y < (m ? 96 : 128) ? 0 : o;
+      const ya = Math.max(y0 + 50, target);
+      const y = i === act ? ya : i < act ? ya - 128 - (act - i - 1) * 98 : ya + 140;
+      const o = !vis ? 0 : i === act ? 1 : Math.max(0.25, 0.65 - (act - i) * 0.12);
+      const fade = y < (m ? 92 : 118) ? 0 : o;
       L[id] = { x: sx, y: vis ? y : y + 24, o: id === 'eco' && b === 0 ? 0 : fade, s: vis ? 1 : 0.94, w: i === act ? cw : cw * 0.82, compact: i !== act, d: i === act ? 0.45 : 0 };
     }
   });
@@ -86,8 +125,9 @@ function camera(b: number, W: number, H: number, m: boolean, shift = false): { b
   }
   if (b === 6) return { box: BOUNDS.nucleo, pad, az: 0.42, el: 0.92, pts: ['corabastos', 'vaca', 'burro', 'cali', 'techo', 'aero', 'calle13', 'tintal', 'magdalena'].map((g) => GEO[g as GeoId].ll) };
   if (b === 7) return { box: BOUNDS.nucleo, pad, az: 0.3, el: 0.88, pts: ['burro', 'vaca', 'techo', 'tingua', 'vuelo', 'fucha'].map((g) => GEO[g as GeoId].ll) };
-  if (b === 8) { pad.left = shift && !m ? W * 0.5 : 0; pad.right = 0; pad.top = m ? H * 0.2 : shift ? 300 : 70; }
-  return { box: BOUNDS.kennedy, pad, az: b === 7 ? 0.2 : b === 8 ? -0.1 : 0, el: b === 8 ? 0.78 : b >= 6 ? 1.0 : 0.95 };
+  if (b === 8) return { box: BOUNDS.social, pad, az: 0.18, el: 0.88, pts: ['alcaldia', 'jac', 'colectivos', 'patio', 'corabastos', 'vaca', 'burro'].map((g) => GEO[g as GeoId].ll) };
+  if (b === 9) { pad.left = shift && !m ? W * 0.5 : 0; pad.right = 0; pad.top = m ? H * 0.2 : shift ? 300 : 70; return { box: BOUNDS.kennedy, pad, az: -0.1, el: 0.78 }; }
+  return { box: BOUNDS.kennedy, pad, az: 0, el: 0.95 };
 }
 
 // ------------------------------------------------------------ geometría
@@ -102,6 +142,7 @@ export default function App() {
   const [mapOk, setMapOk] = useState(false);
   const [view3d, setView3d] = useState(true);
   const [k3p, setK3p] = useState(0);
+  const [simModalOpen, setSimModalOpen] = useState(false);
   const { W, H } = size;
   const m = W < 760;
 
@@ -120,15 +161,15 @@ export default function App() {
   const statics = useRef<Record<string, Pt>>({});
   const prevOn = useRef<Set<string>>(new Set());
   const inited = useRef(false);
-  const shape = useRef<Record<string, string>>({}); // forma vigente de cada tarjeta (React no debe borrarla al re-renderizar)
+  const shape = useRef<Record<string, string>>({});
 
-  // ---------------- navegación (clic, botones, teclado y desplazamiento vertical sincronizado)
+  // ---------------- navegación
   const go = useCallback((n: number) => {
     n = Math.max(0, Math.min(N - 1, n));
     if (n === beatRef.current) return;
     beatRef.current = n;
     setBeat(n);
-    if (n < 8) { setExplore(false); setSel(null); }
+    if (n < 9) { setExplore(false); setSel(null); }
     const target = n * window.innerHeight;
     lock.current = true;
     gsap.to(window, { scrollTo: target, duration: reduced() ? 0 : 0.9, ease: 'power2.inOut', onComplete: () => { lock.current = false; } });
@@ -138,7 +179,7 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(beatRef.current + 1); }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); go(beatRef.current - 1); }
-      if (e.key === 'Escape') { setSel(null); }
+      if (e.key === 'Escape') { setSel(null); setSimModalOpen(false); }
     };
     const onResize = () => setSize({ W: window.innerWidth, H: window.innerHeight });
     addEventListener('keydown', onKey);
@@ -153,7 +194,7 @@ export default function App() {
       onUpdate: (self) => {
         if (lock.current) return;
         const n = Math.round(self.progress * (N - 1));
-        if (n !== beatRef.current) { beatRef.current = n; setBeat(n); if (n < 8) { setExplore(false); setSel(null); } }
+        if (n !== beatRef.current) { beatRef.current = n; setBeat(n); if (n < 9) { setExplore(false); setSel(null); } }
       },
     });
     return () => st.kill();
@@ -176,7 +217,7 @@ export default function App() {
   }, []);
   useEffect(() => { if (beat >= 1 && k3.current) k3.current.load(setK3p); }, [beat]);
   useEffect(() => { v3.current = view3d; }, [view3d]);
-  useEffect(() => { if (k3.current) { k3.current.active = beat >= 2 && view3d; k3.current.orbit = beat === 8; } }, [beat, view3d]);
+  useEffect(() => { if (k3.current) { k3.current.active = beat >= 2 && view3d; k3.current.orbit = beat === 9; } }, [beat, view3d]);
   useEffect(() => { k3.current?.resize(); }, [W, H]);
   useEffect(() => { if (k3.current) k3.current.state(beat, explore ? sel : null); }, [beat, explore, sel]);
 
@@ -193,11 +234,10 @@ export default function App() {
     if (mapOk && mv.current) mv.current.state(beat, explore ? sel : null);
   }, [beat, mapOk, explore, sel]);
 
-  // el mapa se integra a la composición: aparece al hacer clic en el Hidrocéntrico
   useLayoutEffect(() => {
     gsap.to(mapEl.current, { opacity: beat >= 2 && !view3d ? 1 : 0, duration: reduced() ? 0 : 1.4, ease: 'power2.out' });
-    gsap.to(k3El.current, { opacity: beat >= 2 && view3d ? (beat === 8 ? 0.7 : 1) : 0, duration: reduced() ? 0 : 1.4, ease: 'power2.out' });
-    gsap.to('#wash', { opacity: beat >= 2 && beat <= 7 ? 1 : 0, duration: 1 });
+    gsap.to(k3El.current, { opacity: beat >= 2 && view3d ? (beat === 9 ? 0.7 : 1) : 0, duration: reduced() ? 0 : 1.4, ease: 'power2.out' });
+    gsap.to('#wash', { opacity: beat >= 2 && beat <= 8 ? 1 : 0, duration: 1 });
   }, [beat, view3d]);
 
   // ---------------- tarjetas
@@ -205,7 +245,7 @@ export default function App() {
     gsap.set(Object.values(cards.current).filter((e) => e && !e.classList.contains('herosub') && e.tagName !== 'P'), { xPercent: -50, yPercent: -50 });
     gsap.set(cards.current.heroSub, { opacity: 0, y: 14 });
   }, []);
-  const lay = useMemo(() => layout(beat, W, H, m, explore && beat === 8), [beat, W, H, m, explore]);
+  const lay = useMemo(() => layout(beat, W, H, m, explore && beat === 9), [beat, W, H, m, explore]);
   useLayoutEffect(() => {
     const first = !inited.current;
     inited.current = true;
@@ -219,26 +259,25 @@ export default function App() {
         x: s.x, y: s.y, opacity: s.o * dim, scale: s.s, width: s.w || undefined, duration: dur, delay: reduced() || first ? 0 : s.d, ease: 'power3.inOut', overwrite: 'auto',
         onStart: () => { if (k !== 'hero') { el.classList.toggle('compact', s.compact); el.classList.toggle('orb', !!s.orb); shape.current[k] = (s.compact ? ' compact' : '') + (s.orb ? ' orb' : ''); } },
       });
-      if (k !== 'hero') el.style.pointerEvents = s.o > 0.2 && (beat < 8 || explore) ? 'auto' : 'none';
+      if (k !== 'hero') el.style.pointerEvents = s.o > 0.2 && (beat < 9 || explore) ? 'auto' : 'none';
     }
     if (beat === 0) gsap.to(cards.current.heroSub, { opacity: 1, y: 0, duration: 1, delay: 0.5, overwrite: 'auto' });
     else gsap.to(cards.current.heroSub, { opacity: 0, duration: 0.4, overwrite: 'auto' });
   }, [lay, explore, sel, beat]);
 
-  // ---------------- conexiones declarativas: visibles según secuencia y modo explorar
+  // ---------------- conexiones declarativas
   const conns = useMemo(() => CONNS.filter((c) => beat >= c.min && beat <= c.max && (!c.exp || (explore && sel && c.models.includes(sel)))), [beat, explore, sel]);
-  const related = (c: Conn) => !explore || !sel || sel === 'eco' || sel === 'lim' || sel === 'bio' || c.models.includes(sel);
+  const related = (c: Conn) => !explore || !sel || sel === 'eco' || sel === 'lim' || sel === 'bio' || sel === 'soc' || c.models.includes(sel);
   const geoColor = useMemo(() => {
     const g: Record<string, string> = {};
-    const src = beat === 8 && !explore ? [] : beat === 8 && !sel ? CONNS.filter((c) => c.min === 8 && c.max === 8 && (c.a.startsWith('o:') || c.b.startsWith('g:'))) : conns.filter(related);
+    const src = beat === 9 && !explore ? [] : beat === 9 && !sel ? CONNS.filter((c) => c.min === 9 && c.max === 9 && (c.a.startsWith('o:') || c.b.startsWith('g:'))) : conns.filter(related);
     for (const c of src) for (const a of [c.a, c.b]) if (a.startsWith('g:')) g[a.slice(2)] = g[a.slice(2)] || c.color;
     return g;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conns, explore, sel]);
 
-  // ciclo de circularidad (centro y radio)
+  // ciclo de circularidad
   const cyc = useMemo(() => {
-    // en celular el ciclo ocupa la franja libre entre la tarjeta y la barra inferior
     const top = H * (H < 720 ? 0.32 : 0.36) + 76, avail = H - 84 - top;
     const cx = m ? W * 0.5 : Math.min(W * 0.74, W - 250 - Math.min(W * 0.115, H * 0.25));
     const cy = m ? top + avail / 2 : H * 0.5;
@@ -257,7 +296,7 @@ export default function App() {
     };
   }, [cyc]);
 
-  // ---------------- bucle de dibujo: las conexiones siguen a sus nodos y al mapa en cada cuadro
+  // bucle de dibujo de conexiones SVG
   useEffect(() => {
     const anchor = (s: string, other: Pt | null): Pt | null => {
       const [k, a, b] = s.split(':');
@@ -286,6 +325,7 @@ export default function App() {
       }
       return statics.current[a] || null;
     };
+
     type Pd = { t: number; r: number; b: number; l: number };
     const union = (ids: string[], pad: Pd) => {
       let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
@@ -296,128 +336,63 @@ export default function App() {
       }
       return { x: x0 - pad.l, y: y0 - pad.t, w: x1 - x0 + pad.l + pad.r, h: y1 - y0 + pad.t + pad.b };
     };
+
     const setLane = (key: string, ids: string[], pad: Pd) => {
       const el = lanes.current[key];
       if (!el) return;
       const u = union(ids, pad);
-      el.style.transform = 'translate(' + u.x + 'px,' + u.y + 'px)';
-      el.style.width = u.w + 'px';
-      el.style.height = u.h + 'px';
+      if (u.w < 0) return;
+      el.style.transform = `translate(${u.x}px, ${u.y}px)`;
+      el.style.width = `${u.w}px`;
+      el.style.height = `${u.h}px`;
     };
-    // ---- ningún texto se superpone con otro: las etiquetas del territorio y de las conexiones buscan un hueco libre
-    interface Box { x: number; y: number; w: number; h: number }
-    const hit = (a: Box, b: Box) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-    const toBox = (r: DOMRect, pad = 3): Box => ({ x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 });
-    const declutter = (svg: SVGSVGElement, mids: Record<string, { x: number; y: number }>) => {
-      const Wd = window.innerWidth, Hd = window.innerHeight;
-      const occ: Box[] = [{ x: 0, y: 0, w: Wd, h: 66 }, { x: 0, y: Hd - 64, w: Wd, h: 64 }];
-      for (const id of Object.keys(cards.current)) {
-        const el = cards.current[id];
-        if (!el || id === 'heroSub') continue;
-        if (parseFloat(el.style.opacity || '0') > 0.12) occ.push(toBox(el.getBoundingClientRect(), 4));
-      }
-      document.querySelectorAll('.lane.on .chip, #legend, #panel, .herosub').forEach((el) => occ.push(toBox(el.getBoundingClientRect(), 4)));
-      svg.querySelectorAll('.cyc.on text').forEach((el) => occ.push(toBox(el.getBoundingClientRect(), 3)));
-      // una insignia del territorio que quede debajo de un nodo o rótulo se oculta: nunca se encima nada
-      svg.querySelectorAll<SVGGElement>('g.gp').forEach((g) => {
-        if (!g.classList.contains('on')) { g.style.visibility = ''; return; }
-        const bx = toBox(g.querySelector('.gd')!.getBoundingClientRect(), 4);
-        if (occ.some((o) => hit(bx, o))) g.style.visibility = 'hidden';
-        else { g.style.visibility = ''; occ.push(bx); }
-      });
-      svg.querySelectorAll('g.gl2.on circle').forEach((el) => occ.push(toBox(el.getBoundingClientRect(), 3)));
-      const place = (px: number, py: number, w: number, h: number, cands: [number, number, boolean?][], mid: boolean) => {
-        for (const [dx, dy, md] of cands) {
-          const m0 = md ?? mid;
-          const x = px + dx - (m0 ? w / 2 : dx < 0 ? w : 0);
-          const bx: Box = { x, y: py + dy - h + 3, w, h };
-          if (bx.x < 6 || bx.x + bx.w > Wd - 6 || bx.y < 70 || bx.y + bx.h > Hd - 70) continue;
-          if (occ.some((o) => hit(bx, o))) continue;
-          occ.push(bx);
-          return { x: px + dx, y: py + dy };
-        }
-        return null;
-      };
-      svg.querySelectorAll<SVGGElement>('g.gp.on').forEach((g) => {
-        if (g.style.visibility === 'hidden') return;
-        const t = g.querySelector<SVGTextElement>('.gl')!;
-        const P = g.getAttribute('transform')?.match(/translate\(([-\d.]+)[ ,]([-\d.]+)\)/);
-        if (!P) return;
-        const px = parseFloat(P[1]), py = parseFloat(P[2]);
-        if (!t.dataset.w) t.dataset.w = String(t.getComputedTextLength() + 8);
-        const w = parseFloat(t.dataset.w);
-        const pos = place(px, py, w, 13, [[0, 32, true], [0, -22, true], [20, 4], [20, 22], [-20, 4], [-20, 22], [0, 48, true], [0, -38, true]], false);
-        if (pos) {
-          const dxp = pos.x - px;
-          const md = Math.abs(dxp) < 1;
-          t.setAttribute('text-anchor', md ? 'middle' : dxp < 0 ? 'end' : 'start');
-          t.setAttribute('x', String(pos.x - px));
-          t.setAttribute('y', String(pos.y - py));
-          t.style.opacity = '1';
-        } else t.style.opacity = '0';
-      });
-      svg.querySelectorAll<SVGTextElement>('text.el.on').forEach((t) => {
-        const m = mids[t.dataset.el!];
-        if (!m) return;
-        if (!t.dataset.w) t.dataset.w = String(t.getComputedTextLength() + 8);
-        const pos = place(m.x, m.y, parseFloat(t.dataset.w), 13, [[0, -8], [0, 16], [0, -24], [0, 32], [0, -40], [0, 48]], true);
-        if (pos) { t.setAttribute('x', String(pos.x)); t.setAttribute('y', String(pos.y)); t.style.opacity = ''; } else t.style.opacity = '0';
-      });
-    };
+
     const tick = () => {
       const b = beatRef.current;
-      // el margen superior deja sitio a la etiqueta del campo para que nunca pise el texto de las tarjetas
-      setLane('eco', b >= 8 ? ['eco', 'hid', 'reg', 'com', 'cir'] : ['eco', 'hid'], { t: 38, r: 22, b: 20, l: 22 });
-      setLane('hid', ['hid'], { t: 30, r: 11, b: 11, l: 11 });
-      setLane('bio', SPINE, { t: 16, r: 28, b: 16, l: 28 });
-      const mids: Record<string, { x: number; y: number }> = {};
+      setLane('eco', ['eco', 'hid'], { t: 26, r: 24, b: 24, l: 24 });
+      setLane('hid', ['hid'], { t: 14, r: 16, b: 14, l: 14 });
+      setLane('bio', ['eco', 'hid', 'reg', 'com', 'cir', 'lim', 'bio'], { t: 28, r: 28, b: 28, l: 28 });
+
       const svg = svgRef.current;
       if (!svg) return;
+      const mids: Record<string, { x: number; y: number }> = {};
       svg.querySelectorAll<SVGGElement>('g[data-cn]').forEach((g) => {
-        const A = anchor(g.dataset.a!, null);
-        const B = anchor(g.dataset.b!, null);
-        const gone = (s: string) => { const [k, a] = s.split(':'); return (k === 'c' || k === 'o') && parseFloat(cards.current[a]?.style.opacity || '0') < 0.15; };
-        const hide = gone(g.dataset.a!) || gone(g.dataset.b!);
-        g.style.visibility = hide ? 'hidden' : '';
-        if (!A || !B || hide) return;
-        if (A.r || B.r) {
-          const L0 = Math.hypot(B.x - A.x, B.y - A.y) || 1, ux = (B.x - A.x) / L0, uy = (B.y - A.y) / L0;
-          if (A.r) { A.x += ux * A.r; A.y += uy * A.r; }
-          if (B.r) { B.x -= ux * B.r; B.y -= uy * B.r; }
+        const aStr = g.dataset.a!, bStr = g.dataset.b!;
+        const A = anchor(aStr, null);
+        const B = anchor(bStr, A);
+        if (!A || !B) return;
+        const dx = B.x - A.x, dy = B.y - A.y;
+        const d = Math.hypot(dx, dy) || 1;
+        const ra = A.r || 0, rb = B.r || 0;
+        const startX = A.x + (dx / d) * ra, startY = A.y + (dy / d) * ra;
+        const endX = B.x - (dx / d) * rb, endY = B.y - (dy / d) * rb;
+
+        const p = g.querySelectorAll<SVGPathElement>('path[data-p]');
+        let pathStr = '';
+        if (g.dataset.bulge === '1') {
+          const mx = (startX + endX) / 2 - 30, my = (startY + endY) / 2;
+          pathStr = `M${startX} ${startY} Q ${mx} ${my} ${endX} ${endY}`;
+        } else {
+          pathStr = `M${startX} ${startY} L${endX} ${endY}`;
         }
-        const dist = Math.hypot(B.x - A.x, B.y - A.y);
-        const k = g.dataset.bulge === '1' ? 0 : Math.max(36, dist * 0.42);
-        const bulge = g.dataset.bulge === '1' ? 26 + Math.abs(B.y - A.y) * 0.05 : 0;
-        const c1 = { x: A.x + A.dx * k - (bulge && A.dx === -1 ? bulge : 0), y: A.y + A.dy * k };
-        const c2 = { x: B.x + B.dx * k - (bulge && B.dx === -1 ? bulge : 0), y: B.y + B.dy * k };
-        const d = 'M' + A.x + ' ' + A.y + 'C' + c1.x + ' ' + c1.y + ' ' + c2.x + ' ' + c2.y + ' ' + B.x + ' ' + B.y;
-        g.querySelectorAll('path[data-p]').forEach((p) => p.setAttribute('d', d));
-        const ar = g.querySelector('.arrow');
-        if (ar) {
-          const ex = B.x - c2.x, ey = B.y - c2.y;
-          const ang = Math.atan2(ey || (B.y - A.y), ex || (B.x - A.x)) * (180 / Math.PI);
-          ar.setAttribute('transform', 'translate(' + B.x + ' ' + B.y + ') rotate(' + ang + ')');
-        }
-        {
-          const t = 0.5, u = 1 - t;
-          const mx = u * u * u * A.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * B.x;
-          const my = u * u * u * A.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * B.y;
-          mids[g.dataset.cn!] = { x: mx, y: my };
-        }
+        p.forEach((el) => el.setAttribute('d', pathStr));
+        mids[g.dataset.cn!] = { x: (startX + endX) / 2, y: (startY + endY) / 2 };
       });
+
       svg.querySelectorAll<SVGGElement>('g[data-g]').forEach((g) => {
         const P = anchor('g:' + g.dataset.g, null);
-        if (P) g.setAttribute('transform', 'translate(' + P.x + ' ' + P.y + ')');
+        if (P) g.setAttribute('transform', `translate(${P.x} ${P.y})`);
       });
       svg.querySelectorAll<SVGGElement>('g[data-gl]').forEach((g) => {
         const m = mids[g.dataset.gl!];
-        if (m) g.setAttribute('transform', 'translate(' + m.x + ' ' + m.y + ')');
+        if (m) g.setAttribute('transform', `translate(${m.x} ${m.y})`);
       });
-      // Biocéntrico: corchete lateral que recorre las tarjetas anteriores (criterio transversal de evaluación)
+
+      // Biocéntrico corchete en step 7
       const bp = svg.querySelectorAll<SVGPathElement>('path[data-brk]');
       if (b === 7 && window.innerWidth >= 760) {
         const rb = rect(cards.current.bio);
-        const items = SPINE.filter((id) => id !== 'bio').map((id) => ({ id, r: cards.current[id] ? rect(cards.current[id]) : null, o: parseFloat(cards.current[id]?.style.opacity || '0') })).filter((x) => x.r && x.o > 0.2);
+        const items = SPINE.filter((id) => id !== 'bio' && id !== 'soc').map((id) => ({ id, r: cards.current[id] ? rect(cards.current[id]) : null, o: parseFloat(cards.current[id]?.style.opacity || '0') })).filter((x) => x.r && x.o > 0.2);
         if (rb && items.length) {
           const x = Math.min(rb.left, ...items.map((i) => i.r!.left)) - 22;
           const yb = rb.top + rb.height / 2;
@@ -428,28 +403,10 @@ export default function App() {
           bp.forEach((p) => p.setAttribute('d', d));
         }
       } else bp.forEach((p) => p.setAttribute('d', ''));
-      declutter(svg, mids);
     };
     gsap.ticker.add(tick);
     return () => gsap.ticker.remove(tick);
   }, [mapOk]);
-
-  // destello que recorre cada conexión al aparecer
-  useEffect(() => {
-    const now = new Set(conns.filter(related).map((c) => c.id));
-    const svg = svgRef.current;
-    if (svg && !reduced()) {
-      now.forEach((id) => {
-        if (prevOn.current.has(id)) return;
-        const c = CONNS.find((x) => x.id === id)!;
-        const t = svg.querySelector('g[data-cn="' + id + '"] .trav');
-        if (!t) return;
-        setTimeout(() => { t.classList.remove('go'); void (t as SVGElement).getBoundingClientRect(); t.classList.add('go'); }, ((c.delay || 0) + 0.55) * 1000);
-      });
-    }
-    prevOn.current = now;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conns, explore, sel]);
 
   const ripple = (e: React.MouseEvent, color: string) => {
     const r = document.createElement('div');
@@ -462,12 +419,12 @@ export default function App() {
   const onCard = (e: React.MouseEvent, id: ModelId) => {
     e.stopPropagation();
     ripple(e, MODEL[id].color);
-    if (beat >= 8) { if (explore) setSel(sel === id ? null : id); return; }
+    if (beat >= 9) { if (explore) setSel(sel === id ? null : id); return; }
     const act = ACTIVE_BY_BEAT[beat];
     if (SPINE[act] === id) go(beat + 1);
   };
 
-  const orb = useMemo(() => orbit(W, H, m, explore && beat === 8), [W, H, m, explore, beat]);
+  const orb = useMemo(() => orbit(W, H, m, explore && beat === 9), [W, H, m, explore, beat]);
   const selModel = sel ? MODEL[sel] : null;
   const dashedLegend = beat >= 3;
 
@@ -479,12 +436,12 @@ export default function App() {
         <div id="k3d" ref={k3El} style={{ opacity: 0 }} />
         <div id="wash" style={{ opacity: 0 }} />
 
-        {/* campos conceptuales: el Hidrocéntrico queda dentro del Ecocéntrico; Biocéntrico y Límites los atraviesan */}
+        {/* campos conceptuales */}
         <div ref={(e) => { lanes.current.bio = e; }} className={'lane bio'} style={{ ['--c' as string]: COLORS.bio }}>
           <span className="chip"><Bird />Biocéntrico · criterio transversal</span>
         </div>
         <div ref={(e) => { lanes.current.eco = e; }} className={'lane eco' + (beat >= 1 && beat <= 2 ? ' on' : '')} style={{ ['--c' as string]: COLORS.cream }}>
-          <span className="chip"><Leaf />{beat >= 8 ? 'Ecocéntrico · marco general' : 'Campo ecocéntrico'}</span>
+          <span className="chip"><Leaf />{beat >= 9 ? 'Ecocéntrico · marco general' : 'Campo ecocéntrico'}</span>
         </div>
         <div ref={(e) => { lanes.current.hid = e; }} className={'lane hid' + (beat >= 1 && beat <= 2 ? ' on' : '')} style={{ ['--c' as string]: COLORS.water }}>
           <span className="chip"><Droplets />Contenido en el Ecocéntrico</span>
@@ -492,16 +449,16 @@ export default function App() {
 
         {/* conexiones y puntos del territorio */}
         <svg id="links" ref={svgRef} width={W} height={H}>
-          <NetRings o={orb} on={beat === 8} m={m} />
-          <g className={'cyc' + (beat === 5 || (beat === 8 && explore && sel === 'cir') ? ' on' : '')}>
+          <NetRings o={orb} on={beat === 9} m={m} />
+          <g className={'cyc' + (beat === 5 || (beat === 9 && explore && sel === 'cir') ? ' on' : '')}>
             <CycleSvg cyc={cyc} />
           </g>
           {CONNS.map((c) => {
             const on = conns.includes(c) && related(c);
-            const soft = beat <= 7 && c.max >= 8 && ((c.min <= 6 && beat >= c.min + 2) || (c.id[0] === 'e' && beat === 7));
+            const soft = beat <= 8 && c.max >= 9 && ((c.min <= 6 && beat >= c.min + 2) || (c.id[0] === 'e' && beat >= 7));
             return (
               <g key={c.id} data-cn={c.id} data-a={c.a} data-b={c.b} data-bulge={c.bulge ? 1 : 0}
-                className={'cn' + (on ? ' on' : '') + (c.dashed ? ' dsh' : '') + (soft ? ' soft' : '') + (beat === 8 && explore && sel && !related(c) ? ' dimS' : '')}
+                className={'cn' + (on ? ' on' : '') + (c.dashed ? ' dsh' : '') + (soft ? ' soft' : '') + (beat === 9 && explore && sel && !related(c) ? ' dimS' : '')}
                 style={{ ['--c' as string]: c.color, ['--dl' as string]: (on ? c.delay || 0 : 0) + 's' }}>
                 {c.title && <title>{c.title}</title>}
                 <path data-p className="base" pathLength={1} />
@@ -535,7 +492,7 @@ export default function App() {
           ))}
         </svg>
 
-        {/* inicio: una sola palabra en el centro */}
+        {/* inicio */}
         <div ref={(e) => { cards.current.hero = e; }} className="abs hero" onClick={() => beat === 0 && go(1)} style={{ cursor: beat === 0 ? 'pointer' : 'default', pointerEvents: beat === 0 ? 'auto' : 'none' }}>
           <div className="node d0 on" style={{ ['--c' as string]: COLORS.cream, ['--ink' as string]: '#0a0a0a' }}>
             <div className="tile"><Leaf /></div>
@@ -547,6 +504,7 @@ export default function App() {
         </p>
         <div id="hint" className={beat === 0 ? '' : 'hide'}><MousePointerClick />{m ? 'Toca Ecocéntrico para comenzar' : 'Haz clic en Ecocéntrico para comenzar'}</div>
 
+        {/* Tarjetas de macromodelos */}
         {MODELS.map((mod) => (
           <div key={mod.id} ref={(e) => { cards.current[mod.id] = e; }} data-id={mod.id}
             className={'abs node d1 on mm-' + mod.id + (explore && sel === mod.id ? ' sel' : '') + (shape.current[mod.id] || '')}
@@ -566,22 +524,63 @@ export default function App() {
               )}
               {mod.id === 'com' && <span className="tag">estrategia propuesta · no es una condición comprobada</span>}
               {mod.id === 'hid' && <span className="tag blue">humedales y red hídrica según cartografía real</span>}
+              {mod.id === 'soc' && (
+                <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span className="tag" style={{ borderColor: 'rgba(21, 6, 36, 0.5)' }}>Ontología de 3 niveles: Macro (Decisor) · Meso (Articulador) · Micro (Ejecutor)</span>
+                  <button
+                    className="btn"
+                    style={{ height: 28, fontSize: 11, padding: '0 10px', background: '#250c38', color: '#fff', borderColor: '#c084fc', marginTop: 4, width: 'fit-content' }}
+                    onClick={(ev) => { ev.stopPropagation(); setSimModalOpen(true); }}
+                  >
+                    <Sliders size={12} /><span>Abrir Simulador ABM de Gobernanza</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ))}
 
+        {/* Botón flotante para lanzar simulador durante paso 8 */}
+        {beat === 8 && (
+          <button className="sim-overlay-btn" onClick={() => setSimModalOpen(true)}>
+            <Sliders size={16} />
+            <span>Laboratorio ABM: Políticas & Dinámica Social</span>
+          </button>
+        )}
+
+        {/* Modal Interactivo del Simulador de Gobernanza */}
+        {simModalOpen && (
+          <div className="sim-modal-backdrop" onClick={() => setSimModalOpen(false)}>
+            <div className="sim-modal-card" onClick={(e) => e.stopPropagation()}>
+              <button className="sim-modal-close" onClick={() => setSimModalOpen(false)} title="Cerrar simulador">
+                <X size={18} />
+              </button>
+              <SocialSimView />
+            </div>
+          </div>
+        )}
+
         {/* modo explorar */}
-        {beat === 8 && explore && (
+        {beat === 9 && explore && (
           <div id="panel" className={sel ? 'on' : ''} style={{ ['--c' as string]: selModel?.color || '#fff', ...(m ? { top: Math.round(orb.cy + orb.Rl + 36), bottom: 'auto', maxHeight: Math.round(H - (orb.cy + orb.Rl + 36) - 74) } : {}) }}>
             {selModel ? (
               <>
                 <div className="kick">{selModel.role}</div>
                 <h3>{selModel.title}</h3>
                 <p>{selModel.text}</p>
+                {selModel.id === 'soc' && (
+                  <button
+                    className="btn"
+                    style={{ width: '100%', marginTop: 10, background: '#3b0764', color: '#fff', borderColor: '#c084fc' }}
+                    onClick={() => setSimModalOpen(true)}
+                  >
+                    <Sliders size={14} /><span>Simular Agentes y Gobernanza Policéntrica</span>
+                  </button>
+                )}
                 <div className="kick" style={{ marginTop: 12 }}>Relaciones</div>
                 <ul>{REL_TEXT[selModel.id].rel.map(([id, t]) => (<li key={id} onClick={(e) => { e.stopPropagation(); setSel(id); }}><i style={{ background: MODEL[id].color }} /><b>{MODEL[id].short}</b> · {t}</li>))}</ul>
                 <div className="kick" style={{ marginTop: 12 }}>Anclajes en el territorio</div>
-                <div className="geos">{REL_TEXT[selModel.id].geo.map((g) => (<span key={g}>{GEO[g].label}</span>))}</div>
+                <div className="geos">{REL_TEXT[selModel.id].geo.map((g) => (<span key={g}>{GEO[g]?.label || g}</span>))}</div>
               </>
             ) : (
               <div className="kick">Selecciona un macromodelo para ver sus relaciones</div>
@@ -592,7 +591,7 @@ export default function App() {
         <div id="bar">
           <div id="brand">
             <div className="logo"><Network /></div>
-            <div><h1>Red propia · Kennedy</h1><p>Modelamiento dinámico · macromodelos territoriales</p></div>
+            <div><h1>Red propia & Gobernanza · Kennedy</h1><p>Macromodelos territoriales · Dimensión social y dinámica de agentes</p></div>
           </div>
           {beat >= 2 && (
             <button className="btn" onClick={() => setView3d(!view3d)} title="Cambiar entre el Kennedy 3D y el mapa 2D">
@@ -600,7 +599,7 @@ export default function App() {
               {view3d && k3p < 1 && <span className="kick" style={{ marginLeft: 4 }}>{Math.round(k3p * 100)}%</span>}
             </button>
           )}
-          {beat === 8 && (
+          {beat === 9 && (
             <button className={'btn pri' + (explore ? ' act' : '')} onClick={() => { setExplore(!explore); setSel(null); }}>
               <Network />{explore ? (m ? 'Salir' : 'Salir de explorar') : (m ? 'Explorar' : 'Explorar red')}
             </button>
@@ -632,7 +631,7 @@ export default function App() {
 
 function isRelated(sel: ModelId, id: ModelId) {
   if (sel === id) return true;
-  if (sel === 'eco' || sel === 'lim' || sel === 'bio') return true;
+  if (sel === 'eco' || sel === 'lim' || sel === 'bio' || sel === 'soc') return true;
   return REL_TEXT[sel].rel.some(([r]) => r === id);
 }
 
@@ -645,7 +644,7 @@ const CYC_LINES: Record<string, string[]> = {
 };
 function CycleSvg({ cyc }: { cyc: { cx: number; cy: number; R: number; m: boolean; pts: { id: string; label: string; a: number; x: number; y: number }[] } }) {
   const { cx, cy, R, pts, m } = cyc;
-  const T = m ? 22 : 30; // mitad de la ficha
+  const T = m ? 22 : 30;
   const gapA = (T + 12) / R;
   const arcs = pts.map((p, i) => {
     const q = pts[(i + 1) % pts.length];
@@ -715,12 +714,14 @@ function NetRings({ o, on, m }: { o: ReturnType<typeof orbit>; on: boolean; m: b
       <text x={o.cx} y={o.cy - o.Rb - 9} textAnchor="middle" className="ringlb" style={{ fill: COLORS.bio }}>{m ? 'BIOCÉNTRICO · CRITERIO TRANSVERSAL' : 'BIOCÉNTRICO · CRITERIO TRANSVERSAL DE EVALUACIÓN'}</text>
       <circle r="4.5" fill={COLORS.bio} className="orbdot"><animateMotion dur="38s" repeatCount="indefinite"><mpath href="#rbio" /></animateMotion></circle>
       <circle r="3" fill={COLORS.bio} className="orbdot"><animateMotion dur="38s" begin="-19s" repeatCount="indefinite"><mpath href="#rbio" /></animateMotion></circle>
-      {/* Límites ecológicos: condicionan al sistema completo */}
+
+      {/* Límites ecológicos & Gobernanza social */}
       <circle cx={o.cx} cy={o.cy} r={o.Rl} className="nring lim" />
       <path d={ring(o.Rl)} id="rlim" fill="none" />
-      <text x={o.cx} y={o.cy + o.Rl + 20} textAnchor="middle" className="ringlb" style={{ fill: COLORS.grey }}>{m ? 'LÍMITES ECOLÓGICOS' : 'LÍMITES ECOLÓGICOS · CONDICIONAN AL SISTEMA COMPLETO'}</text>
-      <circle r="4" fill={COLORS.grey} className="orbdot"><animateMotion dur="26s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#rlim" /></animateMotion></circle>
+      <text x={o.cx} y={o.cy + o.Rl + 20} textAnchor="middle" className="ringlb" style={{ fill: COLORS.social }}>{m ? 'LÍMITES & GOBERNANZA POLICÉNTRICA' : 'LÍMITES ECOLÓGICOS & AGENCIA SOCIAL POLICÉNTRICA'}</text>
+      <circle r="4" fill={COLORS.social} className="orbdot"><animateMotion dur="26s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#rlim" /></animateMotion></circle>
       <circle r="3" fill={COLORS.grey} className="orbdot"><animateMotion dur="26s" begin="-13s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#rlim" /></animateMotion></circle>
+
       {/* Ecocéntrico: marco general; Hidrocéntrico queda contenido en su centro */}
       <circle cx={o.cx} cy={o.cy} r={o.Re} fill="url(#ecoGlow)" className="neco" />
       <circle cx={o.cx} cy={o.cy} r={o.Re} className="nring eco" />
