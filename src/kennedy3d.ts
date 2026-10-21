@@ -304,14 +304,6 @@ export class Kennedy3D {
     const vias = beat >= 2 ? 1 : 0;
     if (this.lines.vias) this.fade(this.lines.vias.m, vias ? 0.9 : 0, 0.3);
     if (this.lines.vias2) this.fade(this.lines.vias2.m, vias ? 0.55 : 0, 0.4);
-  });
-    if (this.lines.rio) this.fade(this.lines.rio.m, hk ? 0.7 : 0, hk ? 2.2 : 0, 1.2);
-    if (this.lines.canal) this.fade(this.lines.canal.m, hk ? 0.28 : 0, hk ? 2.6 : 0, 1.2);
-    const reg = (beat === 7 || beat === 8 ? 0.3 : 0) || (beat === 3 || beat === 4) || (beat === 9 && (all || sel === 'reg' || sel === 'eco' || sel === 'soc')) ? 0.4 : 0;
-    if (this.lines.rondas) this.fade(this.lines.rondas.m, reg, reg ? 0.9 : 0);
-    const vias = beat === 6 || beat === 7 || beat === 8 || (beat === 9 && (all || sel === 'lim' || sel === 'com' || sel === 'soc')) ? 1 : 0;
-    if (this.lines.vias) this.fade(this.lines.vias.m, vias ? 0.95 : 0, 0.3);
-    if (this.lines.vias2) this.fade(this.lines.vias2.m, vias ? 0.6 : 0, 0.5);
   }
 }
 

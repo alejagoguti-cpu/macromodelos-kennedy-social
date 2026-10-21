@@ -45,7 +45,7 @@ export class MapView {
     // red hídrica: líneas finas reales
     m.addLayer({ id: 'canal', type: 'line', source: 'agua', filter: ['==', ['get', 'kind'], 'canal'], paint: { 'line-color': COLORS.water, 'line-width': 0.8, 'line-opacity': 0 } });
     m.addLayer({ id: 'rio', type: 'line', source: 'agua', filter: ['==', ['get', 'kind'], 'rio'], paint: { 'line-color': COLORS.water, 'line-width': 1.3, 'line-opacity': 0 } });
-    // rondas hídricas existentes (corredores existentes)
+    // rondas hídricas existentes
     m.addLayer({ id: 'rondas', type: 'line', source: 'agua', filter: ['==', ['get', 'kind'], 'rio'], paint: { 'line-color': COLORS.green, 'line-width': 5, 'line-opacity': 0, 'line-blur': 3 } }, 'canal');
     for (const k of ['burro', 'vaca', 'techo']) {
       m.addLayer({ id: 'wf-' + k, type: 'fill', source: 'w-' + k, paint: { 'fill-color': COLORS.water, 'fill-opacity': 0 } });
@@ -74,15 +74,6 @@ export class MapView {
     const vias = beat >= 2 ? 1 : 0;
     this.set('vias', 'line-opacity', vias ? 0.75 : 0, 300);
     this.set('vias2', 'line-opacity', vias ? 0.45 : 0, 500);
-  });
-    this.set('rio', 'line-opacity', hidK ? 0.85 : 0, hidK ? 2200 : 0, 1200);
-    this.set('canal', 'line-opacity', hidK ? 0.6 : 0, hidK ? 2600 : 0, 1200);
-    this.set('otros-f', 'fill-opacity', hidK ? 0.12 : 0, hidK ? 2400 : 0);
-    const reg = (beat >= 3 && beat <= 8) || (beat === 9 && (all || sel === 'reg' || sel === 'eco' || sel === 'soc')) ? 0.5 : 0;
-    this.set('rondas', 'line-opacity', reg, reg ? 900 : 0);
-    const vias = beat === 6 || beat === 7 || beat === 8 || (beat === 9 && (all || sel === 'lim' || sel === 'com' || sel === 'soc')) ? 1 : 0;
-    this.set('vias', 'line-opacity', vias ? 0.85 : 0, 300);
-    this.set('vias2', 'line-opacity', vias ? 0.55 : 0, 500);
   }
 
   fit(box: Box, pad: Pad, duration = 1800) {
