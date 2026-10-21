@@ -29,7 +29,7 @@ export interface PolicyParams {
   coercion: number;     // Phi_d in [0, 1] (intensidad de control / fiscalización)
   polycentric: number;  // G_d in [0, 1] (apertura a gobernanza policéntrica e incentivos)
   latency: number;      // tau_d in ticks (latencia institucional de respuesta)
-  mesoLegitimacy: number;// L_m in [0, 1] (legitimidad comunitaria de JACs y colectivos)
+  communityLegitimacy: number;// L_m in [0, 1] (legitimidad comunitaria de JACs y colectivos)
   rationality: number;  // beta (racionalidad en la función de Boltzmann)
 }
 
@@ -136,14 +136,14 @@ export function createInitialAgents(count = 90): SocialAgent[] {
 
 // Paso computacional del ABM: actualiza utilidades, probabilidades Boltzmann y confianza
 export function stepSimulation(agents: SocialAgent[], policy: PolicyParams, currentTick: number): { nextAgents: SocialAgent[]; stats: SimStats } {
-  const { coercion, polycentric, latency, mesoLegitimacy, rationality } = policy;
+  const { coercion, polycentric, latency, communityLegitimacy, rationality } = policy;
 
   // Parámetros de evolución de confianza (Gemini transcript)
   const lambda_T = 0.04; // Tasa natural de olvido / inercia
   const alpha = 0.16;    // Aprendizaje ante cumplimiento institucional
   const gamma = 0.32;    // Erosión asimétrica ante traición (gamma > alpha)
-  // El mediador meso con legitimidad amortigua la traición institucional:
-  const gamma_effective = gamma * (1 - mesoLegitimacy * 0.75);
+  // El tejido comunitario con legitimidad amortigua la traición institucional:
+  const gamma_effective = gamma * (1 - communityLegitimacy * 0.75);
 
   const compliance = polycentric * Math.max(0, 1 - (latency / 18));
   const betrayal = (coercion > 0.6 && polycentric < 0.25) || latency > 10 ? Math.min(1, 0.3 + (latency / 20) * 0.5 + coercion * 0.3) : 0.08;
@@ -185,7 +185,7 @@ export function stepSimulation(agents: SocialAgent[], policy: PolicyParams, curr
     // Si la gobernanza policéntrica ofrece incentivos económicos (compostaje, reciclaje pagado, custodia),
     // la utilidad económica es muy atractiva incluso para agentes vulnerables.
     const pi_S4 = 1.1 * polycentric * (0.8 + 0.6 * V) - 0.35 * (1 - polycentric);
-    const gamma_S4 = 0.9 * C * (1 + 0.6 * mesoLegitimacy);
+    const gamma_S4 = 0.9 * C * (1 + 0.6 * communityLegitimacy);
     const omega_S4 = 0.95 * T;
     const kappa_S4 = Math.max(0.08, 0.38 - 0.28 * polycentric);
     const u_S4 = w1 * pi_S4 + w2 * gamma_S4 + w3 * omega_S4 - kappa_S4;
@@ -279,7 +279,7 @@ export const PRESETS: Record<string, { name: string; desc: string; policy: Polic
       coercion: 0.85,
       polycentric: 0.08,
       latency: 16,
-      mesoLegitimacy: 0.25,
+      communityLegitimacy: 0.25,
       rationality: 2.2,
     },
   },
@@ -290,7 +290,7 @@ export const PRESETS: Record<string, { name: string; desc: string; policy: Polic
       coercion: 0.35,
       polycentric: 0.82,
       latency: 3,
-      mesoLegitimacy: 0.85,
+      communityLegitimacy: 0.85,
       rationality: 2.4,
     },
   },
@@ -301,7 +301,7 @@ export const PRESETS: Record<string, { name: string; desc: string; policy: Polic
       coercion: 0.15,
       polycentric: 0.12,
       latency: 20,
-      mesoLegitimacy: 0.40,
+      communityLegitimacy: 0.40,
       rationality: 1.8,
     },
   },

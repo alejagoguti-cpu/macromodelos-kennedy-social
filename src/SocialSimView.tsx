@@ -209,18 +209,18 @@ export function SocialSimView({ onAgentSelect, compact = false }: Props) {
 
         <div className="slider-item">
           <div className="sl-header">
-            <span>Legitimidad Articuladores Meso (Lm)</span>
-            <b>{Math.round(policy.mesoLegitimacy * 100)}%</b>
+            <span>Legitimidad y Tejido Comunitario (Lm)</span>
+            <b>{Math.round(policy.communityLegitimacy * 100)}%</b>
           </div>
           <input
             type="range"
             min="0"
             max="1"
             step="0.05"
-            value={policy.mesoLegitimacy}
+            value={policy.communityLegitimacy}
             onChange={(e) => {
               setPresetName('custom');
-              setPolicy({ ...policy, mesoLegitimacy: parseFloat(e.target.value) });
+              setPolicy({ ...policy, communityLegitimacy: parseFloat(e.target.value) });
             }}
           />
         </div>
@@ -288,7 +288,7 @@ export function SocialSimView({ onAgentSelect, compact = false }: Props) {
             <code>P_i(S_t → S_k) = exp(β·U_i(S_k)) / Σ exp(β·U_i(S_j))</code>
           </p>
           <p>
-            <b>3. Memoria Dinámica de Confianza y Escudo Meso:</b>{' '}
+            <b>3. Memoria Dinámica de Confianza y Amortiguación Comunitaria:</b>{' '}
             <code>T_i(t+1) = (1 - λ_T)·T_i(t) + α·Cumplimiento - γ·(1 - L_m)·Traición</code>
           </p>
         </div>

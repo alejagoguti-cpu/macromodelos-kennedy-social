@@ -526,7 +526,7 @@ export default function App() {
               {mod.id === 'hid' && <span className="tag blue">humedales y red hídrica según cartografía real</span>}
               {mod.id === 'soc' && (
                 <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <span className="tag" style={{ borderColor: 'rgba(21, 6, 36, 0.5)' }}>Ontología de 3 niveles: Macro (Decisor) · Meso (Articulador) · Micro (Ejecutor)</span>
+                  <span className="tag" style={{ borderColor: 'rgba(21, 6, 36, 0.5)' }}>Red de gobernanza horizontal: Instancias normativas · Tejido comunitario · Prácticas cotidianas</span>
                   <button
                     className="btn"
                     style={{ height: 28, fontSize: 11, padding: '0 10px', background: '#250c38', color: '#fff', borderColor: '#c084fc', marginTop: 4, width: 'fit-content' }}

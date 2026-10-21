@@ -15,10 +15,10 @@ Secuencia interactiva (React 19 + TypeScript + GSAP/ScrollTrigger + SVG + MapLib
 
 ## Macromodelo Social y Motor ABM (Teoría de Juegos y Elección Discreta)
 
-El modelo social formaliza la red de actores mediante tres niveles ontológicos:
-- **Macro (Decisores Normativos)**: SDP, SDA, IDU, Alcaldía Local de Kennedy (presupuesto $B_d$, intensidad de fiscalización $\Phi_d$, apertura a co-inversión $G_d$, latencia institucional $\tau_d$).
-- **Meso (Articuladores / Mediadores)**: Juntas de Acción Comunal (JAC), Mesas de Humedal, Colectivos Ambientales (legitimidad $L_m$, capacidad de interlocución $A_m$, índice de fatiga $D_m$).
-- **Micro (Ejecutores Operativos)**: Residentes de borde, recicladores de oficio, comercio informal (vulnerabilidad $V_i$, recursos $R_i$, confianza institucional $T_i$, capital social local $C_i$).
+El modelo social formaliza la red de actores mediante tres esferas de agencia relacional y horizontal:
+- **Instancias Normativas y Distritales (Regulación y Recursos)**: SDP, SDA, IDU, Alcaldía Local de Kennedy (presupuesto $B_d$, intensidad de fiscalización $\Phi_d$, apertura a co-inversión $G_d$, latencia institucional $\tau_d$).
+- **Redes Comunitarias y Organizaciones Barriales (Articulación y Mediación)**: Juntas de Acción Comunal (JAC), Mesas de Humedal, Colectivos Ambientales (legitimidad comunitaria $L_m$, capacidad de interlocución $A_m$, mitigación de fatiga).
+- **Comunidades y Prácticas Cotidianas (Custodia y Operación Territorial)**: Residentes de borde, recicladores de oficio, comercio popular (vulnerabilidad $V_i$, recursos $R_i$, confianza institucional $T_i$, capital social local $C_i$).
 
 ### Espacio de Estados Conductuales:
 - **$S_1$**: Evasión / Extracción agresiva (desacato forzado por vulnerabilidad).
@@ -33,7 +33,7 @@ El modelo social formaliza la red de actores mediante tres niveles ontológicos:
 2. **Probabilidad de Boltzmann:**
    $$P_i(S_t \to S_k) = \frac{\exp(\beta \cdot U_i(S_k))}{\sum_{j=1}^4 \exp(\beta \cdot U_i(S_j))}$$
 
-3. **Memoria Dinámica de Confianza y Escudo Meso:**
+3. **Memoria Dinámica de Confianza y Amortiguación Comunitaria:**
    $$T_i(t+1) = (1 - \lambda_T) T_i(t) + \alpha \cdot \text{Cumplimiento} - \gamma (1 - L_m) \cdot \text{Traición}$$
 
 ---

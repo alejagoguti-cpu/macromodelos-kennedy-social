@@ -95,9 +95,9 @@ export const GEO = {
   vuelo: { ll: P('BIO06'), label: 'Corredores de avifauna' },
   magdalena: { ll: P('EEP08'), label: 'Canal Magdalena' },
   alcaldia: { ll: P('ACT05'), label: 'Alcaldía Local · SDA / EAAB' },
-  jac: { ll: P('ACT02'), label: 'JAC Kennedy · Liderazgo meso' },
+  jac: { ll: P('ACT02'), label: 'JAC Kennedy · Articulación comunitaria' },
   colectivos: { ll: P('ACT01'), label: 'Colectivos Ambientales' },
-  planeacion: { ll: P('ACT06'), label: 'SDP · Decisión macro' },
+  planeacion: { ll: P('ACT06'), label: 'SDP · Regulación e instrumentos POT' },
 } as const;
 export type GeoId = keyof typeof GEO;
 
