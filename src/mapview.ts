@@ -62,15 +62,19 @@ export class MapView {
 
   // qué capas del mapa se ven en cada secuencia
   state(beat: number, sel: string | null = null) {
-    const all = beat >= 8 && !sel;
-    const hid = beat >= 2 && beat <= 7 ? 1 : beat === 8 ? (all || sel === 'hid' || sel === 'eco' ? 1 : 0.25) : 0;
-    const dimOthers = beat >= 3 && beat <= 7 ? 0.55 : 1;
-    const hidK = hid * dimOthers;
-    // agua: aparecen primero los humedales, uno tras otro
+    const hidK = beat >= 2 ? 1 : 0;
     ['burro', 'vaca', 'techo'].forEach((k, i) => {
-      this.set('wf-' + k, 'fill-opacity', hidK ? 0.28 * (beat >= 4 && beat <= 7 ? 0.8 : 1) : 0, hidK ? 500 + i * 650 : 0);
-      this.set('wl-' + k, 'line-opacity', hidK ? 0.95 : 0, hidK ? 500 + i * 650 : 0);
+      this.set('wf-' + k, 'fill-opacity', hidK ? 0.35 : 0, hidK ? 200 + i * 200 : 0);
+      this.set('wl-' + k, 'line-opacity', hidK ? 0.95 : 0, hidK ? 200 + i * 200 : 0);
     });
+    this.set('rio', 'line-opacity', hidK ? 0.85 : 0, hidK ? 500 : 0, 800);
+    this.set('canal', 'line-opacity', hidK ? 0.6 : 0, hidK ? 700 : 0, 800);
+    this.set('otros-f', 'fill-opacity', hidK ? 0.15 : 0, hidK ? 500 : 0);
+    this.set('rondas', 'line-opacity', hidK ? 0.45 : 0, hidK ? 400 : 0);
+    const vias = beat >= 2 ? 1 : 0;
+    this.set('vias', 'line-opacity', vias ? 0.75 : 0, 300);
+    this.set('vias2', 'line-opacity', vias ? 0.45 : 0, 500);
+  });
     this.set('rio', 'line-opacity', hidK ? 0.85 : 0, hidK ? 2200 : 0, 1200);
     this.set('canal', 'line-opacity', hidK ? 0.6 : 0, hidK ? 2600 : 0, 1200);
     this.set('otros-f', 'fill-opacity', hidK ? 0.12 : 0, hidK ? 2400 : 0);

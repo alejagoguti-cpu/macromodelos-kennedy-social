@@ -1,5 +1,5 @@
-// Contenido de la secuencia de macromodelos. Los textos de cada macromodelo vienen del guion del proyecto;
-// las coordenadas y relaciones espaciales salen del Excel del proyecto (src/data/proyecto.json, hojas NODOS y ARISTAS).
+// Macromodelo Social · Política Humana y Red de Actores Territoriales de Kennedy
+// Basado en teoría de sistemas complejos, gobernanza policéntrica (Ostrom) y cartografía real del POT (Decreto 555/2021).
 import proyecto from './data/proyecto.json';
 
 export type LngLat = [number, number];
@@ -12,122 +12,199 @@ export const ARISTAS = proyecto.aristas as Record<string, Arista>;
 export const P = (code: string): LngLat => [NODOS[code].lon, NODOS[code].lat];
 export const NOMBRE = (code: string) => NODOS[code].nombre;
 
-// paleta de la referencia (problemaskennedy) más azul hídrico, naranja circularidad y púrpura social
+// Paleta arquitectónica sobria (inspirada en problemaskennedy y cartografía territorial)
 export const COLORS = {
   cream: '#ebe5d9',
-  water: '#6ea8d6',
-  green: '#7fbf8e',
-  earth: '#cdae67',
-  orange: '#e6956a',
-  grey: '#b4b4b4',
-  bio: '#f0f0f0',
-  social: '#c084fc',
+  water: '#6ea8d6',    // Red hídrica y humedales
+  green: '#7fbf8e',    // Rondas y corredores ambientales
+  norm: '#93c5fd',     // Instancias normativas / Regulación
+  custody: '#fcd34d',  // Prácticas cotidianas / Comunidades y economía popular
+  bridge: '#c084fc',   // Tejido comunitario / Articulación y mediación
+  tension: '#f87171',  // Fricciones / Brecha de implementación
+  poly: '#34d399',     // Gobernanza policéntrica / Co-custodia
+  slate: '#94a3b8',    // Conductas territoriales
+  cyan: '#38bdf8',     // Dinámica de agentes en territorio
+  white: '#f8fafc',
   ink: '#0a0a0a',
 };
 
-export type ModelId = 'eco' | 'hid' | 'reg' | 'com' | 'cir' | 'lim' | 'bio' | 'soc';
+export type SocialStageId =
+  | 'humana'      // 01 · Política humana
+  | 'normativa'   // 02 · Instancias normativas
+  | 'cotidiana'   // 03 · Comunidades y custodia cotidiana
+  | 'comunitaria' // 04 · Tejido comunitario y mediación
+  | 'brecha'      // 05 · Brecha de implementación
+  | 'policentrica'// 06 · Gobernanza policéntrica
+  | 'conductas'   // 07 · Estados territoriales
+  | 'dinamica'    // 08 · Simulación territorial
+  | 'red';        // 09 · Red propia de gobernanza
 
-export interface Model {
-  id: ModelId;
+export interface Stage {
+  id: SocialStageId;
   n: string;
   title: string;
   short: string;
   text: string;
   color: string;
   ink: string;
-  appear: number; // secuencia en la que aparece
+  appear: number;
   role: string;
 }
 
-export const MODELS: Model[] = [
-  { id: 'eco', n: '01', title: 'Ecocéntrico', short: 'Ecocéntrico', color: COLORS.cream, ink: '#0a0a0a', appear: 0, role: 'Marco conceptual general',
-    text: 'El territorio entendido como un sistema de interdependencias entre todas las formas de vida.' },
-  { id: 'hid', n: '02', title: 'Hidrocéntrico', short: 'Hidrocéntrico', color: COLORS.water, ink: '#04121c', appear: 1, role: 'Contenido dentro del Ecocéntrico',
-    text: 'El agua y la red hídrica como estructura que organiza el territorio.' },
-  { id: 'reg', n: '03', title: 'Regenerativo', short: 'Regenerativo', color: COLORS.green, ink: '#04150a', appear: 3, role: 'Transformación ecológica',
-    text: 'Restauración de ecosistemas degradados y recuperación de conectividad ecológica.' },
-  { id: 'com', n: '04', title: 'Comercio ecológico y autonomía territorial', short: 'Comercio ecológico', color: COLORS.earth, ink: '#1a1405', appear: 4, role: 'Transformación económica',
-    text: 'Fortalecimiento de la producción local y reducción de la dependencia de insumos externos.' },
-  { id: 'cir', n: '05', title: 'Circularidad', short: 'Circularidad', color: COLORS.orange, ink: '#1f0d04', appear: 5, role: 'Transformación ecológica y económica',
-    text: 'Los residuos orgánicos se reincorporan como insumos para nuevos ciclos productivos.' },
-  { id: 'lim', n: '06', title: 'Límites ecológicos', short: 'Límites ecológicos', color: COLORS.grey, ink: '#0a0a0a', appear: 6, role: 'Criterio transversal',
-    text: 'Las actividades económicas y los sistemas de movilidad deben ajustarse a la capacidad ecológica del territorio.' },
-  { id: 'bio', n: '07', title: 'Biocéntrico', short: 'Biocéntrico', color: COLORS.bio, ink: '#0a0a0a', appear: 7, role: 'Criterio transversal de evaluación',
-    text: 'La continuidad de las distintas formas de vida como criterio para orientar las transformaciones territoriales.' },
-  { id: 'soc', n: '08', title: 'Social y Política Humana', short: 'Social y Gobernanza', color: COLORS.social, ink: '#180728', appear: 8, role: 'Agencia de actores y gobernanza policéntrica',
-    text: 'Desacoplar la decisión formal de la ejecución comunitaria: organización de actores, incentivos y co-custodia para cumplir los macromodelos.' },
+export const STAGES: Stage[] = [
+  {
+    id: 'humana',
+    n: '01',
+    title: 'Política humana y agencia distribuida',
+    short: 'Política humana',
+    color: COLORS.cream,
+    ink: '#0a0a0a',
+    appear: 0,
+    role: 'Marco conceptual del macromodelo',
+    text: 'La red social territorial no es un inventario estático de entidades, sino un sistema dinámico de agencia distribuida donde la organización social emerge de las tensiones entre quiénes deciden y quiénes ejecutan.',
+  },
+  {
+    id: 'normativa',
+    n: '02',
+    title: 'Instancias normativas y de regulación',
+    short: 'Regulación formal',
+    color: COLORS.norm,
+    ink: '#041226',
+    appear: 1,
+    role: 'Poder formal y asignación de recursos',
+    text: 'SDP, SDA, IDU y Alcaldía Local: definen la zonificación, el marco regulatorio y los presupuestos fiscales. Deciden con autoridad legal pero con desconexión fenoménica frente a la velocidad de la dinámica barrial.',
+  },
+  {
+    id: 'cotidiana',
+    n: '03',
+    title: 'Comunidades y prácticas cotidianas',
+    short: 'Práctica cotidiana',
+    color: COLORS.custody,
+    ink: '#1c1302',
+    appear: 3,
+    role: 'Apropiación material y uso efectivo del suelo',
+    text: 'Residentes de borde, recicladores de oficio y comercio popular: materializan día a día el territorio. Sus decisiones responden a supervivencia, economía inmediata y niveles de vulnerabilidad material.',
+  },
+  {
+    id: 'comunitaria',
+    n: '04',
+    title: 'Tejido comunitario y mediación',
+    short: 'Tejido comunitario',
+    color: COLORS.bridge,
+    ink: '#160524',
+    appear: 4,
+    role: 'Articulación de proximidad y legitimidad barrial',
+    text: 'JACs, mesas ambientales de humedal y colectivos vecinales: filtran, traducen y legitiman decisiones entre la norma distrital y la base social. Reducen asimetrías de información y amortiguan tensiones territoriales.',
+  },
+  {
+    id: 'brecha',
+    n: '05',
+    title: 'La brecha de implementación y bucle destructivo',
+    short: 'Brecha de implementación',
+    color: COLORS.tension,
+    ink: '#260404',
+    appear: 5,
+    role: 'Trampa de política de mando y control vertical',
+    text: 'Cuando la norma se impone de forma vertical sin incentivos locales, surge la evasión comunitaria, se degradan los humedales y se intensifica la fiscalización punitiva, destruyendo la confianza institucional acumulada.',
+  },
+  {
+    id: 'policentrica',
+    n: '06',
+    title: 'Gobernanza policéntrica y co-custodia',
+    short: 'Gobernanza policéntrica',
+    color: COLORS.poly,
+    ink: '#031c12',
+    appear: 6,
+    role: 'Estrategia de transformación territorial',
+    text: 'Superar la trampa mediante decisiones vinculantes de proximidad, incentivos económicos productivos (reciclaje tecnificado, agricultura urbana) y acuerdos de manejo compartido sobre bordes y rondas hídricas.',
+  },
+  {
+    id: 'conductas',
+    n: '07',
+    title: 'Estados territoriales de conducta',
+    short: 'Estados conductuales',
+    color: COLORS.slate,
+    ink: '#0f172a',
+    appear: 7,
+    role: 'Espacio de estados de la población',
+    text: 'La población territorial transiciona estocásticamente entre cuatro estados: S1 Evasión agresiva, S2 Oportunismo pasivo, S3 Cumplimiento normativo y S4 Co-custodia activa de los bienes comunes.',
+  },
+  {
+    id: 'dinamica',
+    n: '08',
+    title: 'Dinámica de agentes en el territorio de Kennedy',
+    short: 'Dinámica territorial',
+    color: COLORS.cyan,
+    ink: '#031c26',
+    appear: 8,
+    role: 'Simulación interactiva de políticas y confianza',
+    text: 'Auditoría en tiempo real de 80 agentes en Humedales La Vaca, El Burro, Patio Bonito y Corabastos: comprueba cómo cambian las conductas y la confianza ante variaciones de coerción, incentivos y latencia.',
+  },
 ];
-export const MODEL = Object.fromEntries(MODELS.map((m) => [m.id, m])) as Record<ModelId, Model>;
+
+export const STAGE_MAP = Object.fromEntries(STAGES.map((s) => [s.id, s])) as Record<SocialStageId, Stage>;
 
 export const STEP_LABELS = [
-  'Ecocéntrico',
-  'Hidrocéntrico',
-  'Red hídrica',
-  'Regenerativo',
-  'Comercio ecológico',
-  'Circularidad',
-  'Límites ecológicos',
-  'Biocéntrico',
-  'Social y gobernanza',
-  'Red propia',
+  'Política humana',
+  'Instancias normativas',
+  'Mapeo institucional',
+  'Prácticas cotidianas',
+  'Tejido comunitario',
+  'Brecha de implementación',
+  'Gobernanza policéntrica',
+  'Estados de conducta',
+  'Dinámica en territorio',
+  'Red propia de gobernanza',
 ];
 export const N = STEP_LABELS.length;
 
-// índice de cada macromodelo en la columna (la cámara vertical sigue al activo)
-export const SPINE: ModelId[] = ['eco', 'hid', 'reg', 'com', 'cir', 'lim', 'bio', 'soc'];
+// Columna vertical en la pantalla
+export const SPINE: SocialStageId[] = ['humana', 'normativa', 'cotidiana', 'comunitaria', 'brecha', 'policentrica', 'conductas', 'dinamica'];
 export const ACTIVE_BY_BEAT = [0, 1, 1, 2, 3, 4, 5, 6, 7, -1];
 
-// puntos del territorio (todos con coordenadas del Excel del proyecto)
+// Puntos geográficos y actores en el territorio de Kennedy
 export const GEO = {
-  burro: { ll: P('EEP01'), label: 'El Burro' },
-  vaca: { ll: P('EEP02'), label: 'La Vaca' },
-  techo: { ll: P('EEP03'), label: 'Techo' },
-  hub: { ll: P('EEP09'), label: 'Corredor propuesto' },
-  fucha: { ll: P('EEP04'), label: 'Ronda del Fucha' },
-  corabastos: { ll: P('ECO01'), label: 'Corabastos' },
-  patio: { ll: P('ECO03'), label: 'Economía popular · Patio Bonito' },
-  cali: { ll: P('MOV02'), label: 'Av. Ciudad de Cali' },
-  americas: { ll: P('MOV03'), label: 'Av. de las Américas' },
-  calle13: { ll: P('ECO05'), label: 'Corredor logístico Calle 13' },
-  aero: { ll: P('AE09'), label: 'AE09 · Distrito aeroportuario' },
-  tintal: { ll: P('AE15'), label: 'AE15 · Eje Tintal' },
-  tingua: { ll: P('BIO01'), label: 'Tingua bogotana' },
-  vuelo: { ll: P('BIO06'), label: 'Corredores de avifauna' },
-  magdalena: { ll: P('EEP08'), label: 'Canal Magdalena' },
   alcaldia: { ll: P('ACT05'), label: 'Alcaldía Local · SDA / EAAB' },
-  jac: { ll: P('ACT02'), label: 'JAC Kennedy · Articulación comunitaria' },
-  colectivos: { ll: P('ACT01'), label: 'Colectivos Ambientales' },
   planeacion: { ll: P('ACT06'), label: 'SDP · Regulación e instrumentos POT' },
+  idu: { ll: P('ACT07'), label: 'IDU · Infraestructura urbana' },
+  jac: { ll: P('ACT02'), label: 'JAC Kennedy · Liderazgo barrial' },
+  colectivos: { ll: P('ACT01'), label: 'Colectivos Ambientales' },
+  patio: { ll: P('ECO03'), label: 'Economía popular · Patio Bonito' },
+  corabastos: { ll: P('ECO01'), label: 'Corabastos · Central de abastos' },
+  vaca: { ll: P('EEP02'), label: 'Humedal La Vaca · Borde habitado' },
+  burro: { ll: P('EEP01'), label: 'Humedal El Burro · Ronda y presión' },
+  techo: { ll: P('EEP03'), label: 'Humedal de Techo' },
+  fucha: { ll: P('EEP04'), label: 'Ronda del Fucha' },
+  tintal: { ll: P('AE15'), label: 'Eje Tintal · Barrios consolidados' },
 } as const;
 export type GeoId = keyof typeof GEO;
 
-// relaciones del Excel que se muestran como tensiones y dependencias (secuencia 6)
-export const LIMIT_EDGES: { id: string; a: GeoId; b: GeoId }[] = [
-  { id: 'EDG-15', a: 'corabastos', b: 'cali' },
-  { id: 'EDG-16', a: 'cali', b: 'burro' },
-  { id: 'EDG-14', a: 'corabastos', b: 'vaca' },
-  { id: 'EDG-02', a: 'aero', b: 'techo' },
-  { id: 'EDG-56', a: 'aero', b: 'calle13' },
-  { id: 'EDG-54', a: 'magdalena', b: 'techo' },
-  { id: 'EDG-04', a: 'tintal', b: 'burro' },
-];
-export const isDependency = (id: string) => ['Articulación funcional', 'Encadenamiento económico y plusvalía'].includes(ARISTAS[id].tipo);
+// Relaciones del Excel POT aplicadas al modelo social
+export const SOCIAL_EDGES = [
+  { id: 'EDG-S01', a: 'planeacion', b: 'alcaldia', tipo: 'Coordinación normativa distrital', tension: 'Baja' },
+  { id: 'EDG-S02', a: 'alcaldia', b: 'jac', tipo: 'Presupuestos participativos y mediación', tension: 'Media' },
+  { id: 'EDG-S03', a: 'alcaldia', b: 'colectivos', tipo: 'Mesas de humedal y acuerdos ambientales', tension: 'Media' },
+  { id: 'EDG-S04', a: 'jac', b: 'patio', tipo: 'Organización vecinal y economía popular', tension: 'Baja' },
+  { id: 'EDG-S05', a: 'colectivos', b: 'vaca', tipo: 'Veeduría y custodia comunitaria', tension: 'Baja' },
+  { id: 'EDG-S06', a: 'colectivos', b: 'burro', tipo: 'Monitoreo ambiental de vertimientos', tension: 'Media' },
+  { id: 'EDG-S07', a: 'corabastos', b: 'patio', tipo: 'Flujo informal y reciclaje de oficio', tension: 'Alta' },
+  { id: 'EDG-S08', a: 'patio', b: 'vaca', tipo: 'Presión antrópica sobre borde de ronda', tension: 'Alta' },
+  { id: 'EDG-S09', a: 'corabastos', b: 'burro', tipo: 'Impacto por residuos y transporte de carga', tension: 'Alta' },
+] as const;
 
-// cuadros de cámara
+// Encuadres de cámara para cada fase
 export const BOUNDS = {
   kennedy: [-74.186, 4.606, -74.126, 4.664] as [number, number, number, number],
-  humedales: [-74.168, 4.622, -74.136, 4.652] as [number, number, number, number],
-  corabastos: [-74.1735, 4.6125, -74.1395, 4.6405] as [number, number, number, number],
-  nucleo: [-74.1745, 4.6175, -74.1285, 4.6595] as [number, number, number, number],
-  social: [-74.1750, 4.6150, -74.1330, 4.6520] as [number, number, number, number],
+  institucional: [-74.168, 4.622, -74.135, 4.648] as [number, number, number, number],
+  bordes: [-74.172, 4.618, -74.142, 4.646] as [number, number, number, number],
+  mediacion: [-74.166, 4.624, -74.142, 4.646] as [number, number, number, number],
+  conflictos: [-74.175, 4.615, -74.138, 4.648] as [number, number, number, number],
 };
 
-export const CYCLE = [
-  { id: 'consumo', label: 'Consumo' },
-  { id: 'residuos', label: 'Residuos orgánicos' },
-  { id: 'aprov', label: 'Aprovechamiento' },
-  { id: 'insumos', label: 'Nuevos insumos' },
-  { id: 'prod', label: 'Producción' },
+// Estados conductuales detallados
+export const BEHAVIOR_STATES = [
+  { id: 'S1', label: 'S1 · Evasión / Extracción', desc: 'Desacato normativo forzado por vulnerabilidad de subsistencia y desconfianza.', color: '#f87171' },
+  { id: 'S2', label: 'S2 · Oportunismo pasivo', desc: 'Acatamiento intermitente condicionado estrictamente a presencia o sanción policial.', color: '#fbbf24' },
+  { id: 'S3', label: 'S3 · Cumplimiento normativo', desc: 'Cumplimiento estándar por inercia cívica o costo de la infracción legal.', color: '#60a5fa' },
+  { id: 'S4', label: 'S4 · Co-custodia activa', desc: 'Apropiación comunitaria, cuidado de humedales y separación tecnificada de residuos.', color: '#34d399' },
 ];
-// los flujos propuestos se distinguen de los existentes; no se estiman cantidades
-export const CYCLE_PROPOSED = [false, true, true, true, false];

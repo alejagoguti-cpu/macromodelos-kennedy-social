@@ -1,106 +1,160 @@
-import { ARISTAS, COLORS, GEO, LIMIT_EDGES, MODEL, isDependency, type GeoId, type ModelId } from './content';
+import { COLORS, GEO, SOCIAL_EDGES, STAGE_MAP, type GeoId, type SocialStageId } from './content';
 
-// Una conexión entre dos anclas.
-//  c:<modelo>:<t|b|l|r>  borde de una tarjeta     g:<punto>  punto del territorio (se proyecta sobre el mapa)
-//  x:<id>  punto del ciclo                         f:<eco|bio>:<t|b>  borde de un campo conceptual
 export interface Conn {
   id: string;
   a: string;
   b: string;
   color: string;
-  dashed?: boolean; // propuesto (no existente)
+  dashed?: boolean;
   arrow?: boolean;
   min: number;
   max: number;
-  models: ModelId[];
+  stages: SocialStageId[];
   delay?: number;
   label?: string;
   title?: string;
   bulge?: boolean;
-  kind?: 'tension' | 'dep';
-  exp?: boolean; // solo en el modo explorar
+  kind?: 'tension' | 'agreement';
+  exp?: boolean;
 }
 
 const C = COLORS;
-const arista = (id: string) => ARISTAS[id];
-
 export const CONNS: Conn[] = [];
 const add = (c: Conn) => CONNS.push(c);
 
-// ---- columna vertical (secuencias 1 a 8)
-add({ id: 's-eco-hid', a: 'c:eco:b', b: 'c:hid:t', color: C.cream, arrow: true, min: 1, max: 8, delay: 0.9, models: ['eco', 'hid'] });
-add({ id: 's-hid-reg', a: 'c:hid:b', b: 'c:reg:t', color: C.water, arrow: true, min: 3, max: 8, delay: 0.7, models: ['hid', 'reg'] });
-add({ id: 's-reg-com', a: 'c:reg:b', b: 'c:com:t', color: C.green, arrow: true, min: 4, max: 8, delay: 0.7, models: ['reg', 'com'] });
-add({ id: 's-com-cir', a: 'c:com:b', b: 'c:cir:t', color: C.earth, arrow: true, min: 5, max: 8, delay: 0.7, models: ['com', 'cir'] });
-add({ id: 's-cir-lim', a: 'c:cir:b', b: 'c:lim:t', color: C.orange, arrow: true, min: 6, max: 8, delay: 0.7, models: ['cir', 'lim'] });
-add({ id: 's-lim-bio', a: 'c:lim:b', b: 'c:bio:t', color: C.grey, arrow: true, min: 7, max: 8, delay: 0.7, models: ['lim', 'bio'] });
-add({ id: 's-bio-soc', a: 'c:bio:b', b: 'c:soc:t', color: C.bio, arrow: true, min: 8, max: 8, delay: 0.7, models: ['bio', 'soc'] });
+// ---- Columna vertical progresiva (secuencias 1 a 8)
+add({ id: 's-hum-norm', a: 'c:humana:b', b: 'c:normativa:t', color: C.cream, arrow: true, min: 1, max: 8, delay: 0.8, stages: ['humana', 'normativa'] });
+add({ id: 's-norm-cot', a: 'c:normativa:b', b: 'c:cotidiana:t', color: C.norm, arrow: true, min: 3, max: 8, delay: 0.7, stages: ['normativa', 'cotidiana'] });
+add({ id: 's-cot-com', a: 'c:cotidiana:b', b: 'c:comunitaria:t', color: C.custody, arrow: true, min: 4, max: 8, delay: 0.7, stages: ['cotidiana', 'comunitaria'] });
+add({ id: 's-com-bre', a: 'c:comunitaria:b', b: 'c:brecha:t', color: C.bridge, arrow: true, min: 5, max: 8, delay: 0.7, stages: ['comunitaria', 'brecha'] });
+add({ id: 's-bre-pol', a: 'c:brecha:b', b: 'c:policentrica:t', color: C.tension, arrow: true, min: 6, max: 8, delay: 0.7, stages: ['brecha', 'policentrica'] });
+add({ id: 's-pol-con', a: 'c:policentrica:b', b: 'c:conductas:t', color: C.poly, arrow: true, min: 7, max: 8, delay: 0.7, stages: ['policentrica', 'conductas'] });
+add({ id: 's-con-din', a: 'c:conductas:b', b: 'c:dinamica:t', color: C.slate, arrow: true, min: 8, max: 8, delay: 0.7, stages: ['conductas', 'dinamica'] });
 
-// ---- Hidrocéntrico: humedales y red hídrica reales
-(['burro', 'vaca', 'techo'] as GeoId[]).forEach((g, i) => add({ id: 'h-' + g, a: 'c:hid:r', b: 'g:' + g, color: C.water, min: 2, max: 2, delay: 0.6 + i * 0.65, models: ['hid'] }));
+// ---- Secuencia 2: Instancias normativas distritales
+add({ id: 'n-plan', a: 'c:normativa:r', b: 'g:planeacion', color: C.norm, min: 2, max: 2, delay: 0.5, stages: ['normativa'], title: 'SDP: formulación de instrumentos POT y normas de uso del suelo' });
+add({ id: 'n-alc', a: 'c:normativa:r', b: 'g:alcaldia', color: C.norm, min: 2, max: 2, delay: 0.9, stages: ['normativa'], title: 'Alcaldía Local / SDA / EAAB: gestión administrativa y policiva' });
+add({ id: 'n-idu', a: 'c:normativa:r', b: 'g:idu', color: C.norm, min: 2, max: 2, delay: 1.3, stages: ['normativa'], title: 'IDU: diseño y ejecución de obras viales e infraestructura pública' });
+add({ id: 'n-rel-plan-alc', a: 'g:planeacion', b: 'g:alcaldia', color: C.norm, dashed: true, min: 2, max: 2, delay: 1.6, stages: ['normativa'], title: 'Articulación interinstitucional distrital' });
 
-// ---- Regenerativo: corredores existentes (rondas) y propuestos (conexión conceptual)
-add({ id: 'r-ronda', a: 'c:reg:r', b: 'g:fucha', color: C.green, min: 3, max: 3, delay: 0.5, models: ['reg'], title: 'Ronda hídrica del Río Fucha: corredor existente (NOD-EEP04)' });
-add({ id: 'r-hub', a: 'c:reg:r', b: 'g:hub', color: C.green, dashed: true, min: 3, max: 3, delay: 1.1, models: ['reg'], title: 'Corredor propuesto El Burro – La Vaca – Techo (NOD-EEP09): hipótesis, no existe como corredor' });
-(['burro', 'vaca', 'techo'] as GeoId[]).forEach((g, i) => add({ id: 'r-' + g, a: 'g:hub', b: 'g:' + g, color: C.green, dashed: true, arrow: true, min: 3, max: 3, delay: 1.6 + i * 0.5, models: ['reg'], title: arista('EDG-5' + (i + 1)).razon }));
+// ---- Secuencia 3: Comunidades y prácticas cotidianas
+add({ id: 'c-patio', a: 'c:cotidiana:r', b: 'g:patio', color: C.custody, min: 3, max: 3, delay: 0.5, stages: ['cotidiana'], title: 'Economía popular en Patio Bonito y María Paz: comercio informal y vivienda' });
+add({ id: 'c-cora', a: 'c:cotidiana:r', b: 'g:corabastos', color: C.custody, min: 3, max: 3, delay: 0.9, stages: ['cotidiana'], title: 'Corabastos: principal nodo de abastecimiento de alimentos y generación orgánica' });
+add({ id: 'c-vaca', a: 'c:cotidiana:r', b: 'g:vaca', color: C.custody, min: 3, max: 3, delay: 1.3, stages: ['cotidiana'], title: 'Borde habitado Humedal La Vaca: asentamiento continuo y presión de ocupación' });
+add({ id: 'c-burro', a: 'c:cotidiana:r', b: 'g:burro', color: C.custody, min: 3, max: 3, delay: 1.6, stages: ['cotidiana'], title: 'Ronda Humedal El Burro: vertimientos y depósito no formal de escombros' });
 
-// ---- Comercio ecológico y autonomía territorial
-add({ id: 'c-cora', a: 'c:com:r', b: 'g:corabastos', color: C.earth, min: 4, max: 4, delay: 0.5, models: ['com'] });
-add({ id: 'c-patio', a: 'c:com:r', b: 'g:patio', color: C.earth, min: 4, max: 4, delay: 0.9, models: ['com'] });
-add({ id: 'c-art', a: 'g:patio', b: 'g:corabastos', color: C.earth, dashed: true, min: 4, max: 4, delay: 1.4, models: ['com'], title: 'Articulación propuesta entre Corabastos y la economía popular de Patio Bonito (estrategia, no condición comprobada)' });
+// ---- Secuencia 4: Tejido comunitario y mediación barrial
+add({ id: 'm-jac', a: 'c:comunitaria:r', b: 'g:jac', color: C.bridge, min: 4, max: 4, delay: 0.5, stages: ['comunitaria'], title: 'Juntas de Acción Comunal: representatividad barrial y convocatoria' });
+add({ id: 'm-col', a: 'c:comunitaria:r', b: 'g:colectivos', color: C.bridge, min: 4, max: 4, delay: 0.9, stages: ['comunitaria'], title: 'Colectivos Ambientales y Mesas de Humedal: pedagogía y defensa territorial' });
+add({ id: 'm-jac-pat', a: 'g:jac', b: 'g:patio', color: C.bridge, arrow: true, min: 4, max: 4, delay: 1.4, stages: ['comunitaria'], title: 'Canal de mediación entre vecinos organizados y comercio popular' });
+add({ id: 'm-col-vac', a: 'g:colectivos', b: 'g:vaca', color: C.bridge, arrow: true, min: 4, max: 4, delay: 1.7, stages: ['comunitaria'], title: 'Articulación de vecinos custodios con el humedal' });
 
-// ---- Circularidad: se conecta al ciclo y el ciclo a Corabastos
-add({ id: 'ci-cora', a: 'x:residuos', b: 'g:corabastos', color: C.orange, min: 5, max: 5, delay: 1.2, models: ['cir'], title: 'Generación de residuos orgánicos en Corabastos (NOD-ECO01)' });
-add({ id: 'ci-net', a: 'o:cir', b: 'g:corabastos', color: C.orange, min: 9, max: 9, delay: 0.5, models: ['cir'], exp: true });
+// ---- Secuencia 5: La Brecha de Implementación (Tensiones y bucle de castigo)
+add({ id: 'b-card', a: 'c:brecha:r', b: 'g:alcaldia', color: C.tension, min: 5, max: 5, delay: 0.4, stages: ['brecha'] });
+add({ id: 'b-alc-pat', a: 'g:alcaldia', b: 'g:patio', color: C.tension, dashed: true, arrow: true, min: 5, max: 5, delay: 0.8, stages: ['brecha'], kind: 'tension', title: 'Operativos de desalojo e incautación sin alternativas económicas (tensión)' });
+add({ id: 'b-alc-vac', a: 'g:alcaldia', b: 'g:vaca', color: C.tension, dashed: true, arrow: true, min: 5, max: 5, delay: 1.1, stages: ['brecha'], kind: 'tension', title: 'Sanciones policivas sobre construcciones en ronda hídrica' });
+add({ id: 'b-pat-vac', a: 'g:patio', b: 'g:vaca', color: C.tension, arrow: true, min: 5, max: 5, delay: 1.4, stages: ['brecha'], kind: 'tension', title: 'Resistencia: ocupación informal persistente por necesidad de subsistencia' });
 
-// ---- Límites ecológicos: tensiones y dependencias del Excel del proyecto
-add({ id: 'l-cali', a: 'c:lim:r', b: 'g:cali', color: C.grey, min: 6, max: 6, delay: 0.4, models: ['lim'] });
-LIMIT_EDGES.forEach((e, i) => {
-  const dep = isDependency(e.id);
-  add({
-    id: 'e-' + e.id, a: 'g:' + e.a, b: 'g:' + e.b, color: dep ? C.grey : '#ffffff', dashed: dep, min: 6, max: 6, delay: 0.9 + i * 0.28, models: ['lim'],
-    kind: dep ? 'dep' : 'tension', title: e.id + ' · ' + arista(e.id).tipo + ' (' + arista(e.id).tension + '): ' + arista(e.id).razon,
-  });
-});
+// ---- Secuencia 6: Gobernanza Policéntrica y Co-custodia
+add({ id: 'p-card', a: 'c:policentrica:r', b: 'g:jac', color: C.poly, min: 6, max: 6, delay: 0.4, stages: ['policentrica'] });
+add({ id: 'p-alc-jac', a: 'g:alcaldia', b: 'g:jac', color: C.poly, arrow: true, min: 6, max: 6, delay: 0.8, stages: ['policentrica'], kind: 'agreement', title: 'Acuerdos de manejo compartido y presupuestos participativos de proximidad' });
+add({ id: 'p-alc-col', a: 'g:alcaldia', b: 'g:colectivos', color: C.poly, arrow: true, min: 6, max: 6, delay: 1.1, stages: ['policentrica'], kind: 'agreement', title: 'Reconocimiento formal de veedurías y co-manejo ambiental' });
+add({ id: 'p-col-vac', a: 'g:colectivos', b: 'g:vaca', color: C.poly, arrow: true, min: 6, max: 6, delay: 1.4, stages: ['policentrica'], kind: 'agreement', title: 'Co-custodia activa: reforestación y vallados vivos comunitarios' });
+add({ id: 'p-col-bur', a: 'g:colectivos', b: 'g:burro', color: C.poly, arrow: true, min: 6, max: 6, delay: 1.7, stages: ['policentrica'], kind: 'agreement', title: 'Separación y compostaje comunitario de residuos orgánicos' });
 
-// ---- Biocéntrico: criterio transversal sobre todo lo anterior (el corchete lateral se dibuja aparte)
-add({ id: 'b-tingua', a: 'c:bio:r', b: 'g:tingua', color: C.bio, min: 7, max: 7, delay: 1.3, models: ['bio'] });
-add({ id: 'b-vuelo', a: 'c:bio:r', b: 'g:vuelo', color: C.bio, min: 7, max: 7, delay: 1.5, models: ['bio'] });
+// ---- Secuencia 7: Estados territoriales de conducta
+add({ id: 'st-card', a: 'c:conductas:r', b: 'g:patio', color: C.slate, min: 7, max: 7, delay: 0.4, stages: ['conductas'] });
+add({ id: 'st-pat-vac', a: 'g:patio', b: 'g:vaca', color: C.slate, dashed: true, min: 7, max: 7, delay: 0.8, stages: ['conductas'], title: 'Transición conductual de los pobladores de borde según incentivos' });
+add({ id: 'st-col-bur', a: 'g:colectivos', b: 'g:burro', color: C.poly, arrow: true, min: 7, max: 7, delay: 1.2, stages: ['conductas'], title: 'Transformación hacia el estado S4 (Co-custodia)' });
 
-// ---- Social y Gobernanza (Secuencia 8): Nodos decisores, mediadores y ejecutores
-add({ id: 'so-card', a: 'c:soc:r', b: 'g:alcaldia', color: C.social, min: 8, max: 8, delay: 0.4, models: ['soc'] });
-add({ id: 'so-dec-jac', a: 'g:alcaldia', b: 'g:jac', color: C.social, dashed: true, arrow: true, min: 8, max: 8, delay: 0.8, models: ['soc'], title: 'Descentralización: presupuestos participativos y acuerdos de manejo' });
-add({ id: 'so-dec-col', a: 'g:alcaldia', b: 'g:colectivos', color: C.social, dashed: true, arrow: true, min: 8, max: 8, delay: 1.1, models: ['soc'], title: 'Mesas de concertación ambiental y veedurías ciudadanas' });
-add({ id: 'so-jac-pat', a: 'g:jac', b: 'g:patio', color: C.social, arrow: true, min: 8, max: 8, delay: 1.4, models: ['soc'], title: 'Articulación comunitaria con la economía popular y residentes de Patio Bonito' });
-add({ id: 'so-col-vac', a: 'g:colectivos', b: 'g:vaca', color: C.social, arrow: true, min: 8, max: 8, delay: 1.6, models: ['soc'], title: 'Co-custodia activa y vigilancia ecológica comunitaria del Humedal La Vaca' });
-add({ id: 'so-col-bur', a: 'g:colectivos', b: 'g:burro', color: C.social, arrow: true, min: 8, max: 8, delay: 1.8, models: ['soc'], title: 'Custodia ciudadana y mitigación de vertimientos en El Burro' });
+// ---- Secuencia 9: Red propia orbital de gobernanza
+add({ id: 'r-hum-norm', a: 'o:humana', b: 'o:normativa', color: C.cream, arrow: true, min: 9, max: 9, delay: 0.8, stages: ['humana', 'normativa'] });
+add({ id: 'r-norm-pol', a: 'o:normativa', b: 'o:policentrica', color: C.norm, arrow: true, min: 9, max: 9, delay: 1.1, stages: ['normativa', 'policentrica'], title: 'Descentralización normativa hacia la gobernanza policéntrica' });
+add({ id: 'r-com-pol', a: 'o:comunitaria', b: 'o:policentrica', color: C.bridge, arrow: true, min: 9, max: 9, delay: 1.4, stages: ['comunitaria', 'policentrica'], title: 'El tejido barrial sostiene la legitimidad de los acuerdos' });
+add({ id: 'r-cot-pol', a: 'o:cotidiana', b: 'o:policentrica', color: C.custody, arrow: true, min: 9, max: 9, delay: 1.7, stages: ['cotidiana', 'policentrica'], title: 'Las comunidades cotidianas materializan la co-custodia efectiva' });
+add({ id: 'r-bre-pol', a: 'o:brecha', b: 'o:policentrica', color: C.tension, dashed: true, arrow: true, min: 9, max: 9, delay: 2.0, stages: ['brecha', 'policentrica'], title: 'Superación del bucle destructivo punitivo' });
+add({ id: 'r-pol-con', a: 'o:policentrica', b: 'o:conductas', color: C.poly, arrow: true, min: 9, max: 9, delay: 2.3, stages: ['policentrica', 'conductas'], title: 'Gobernanza como inductora del estado S4' });
 
-// ---- Red propia (secuencia 9): relaciones entre macromodelos
-add({ id: 'n-eco-hid', a: 'o:eco', b: 'o:hid', color: C.cream, arrow: true, min: 9, max: 9, delay: 0.9, models: ['eco', 'hid'], title: 'El Hidrocéntrico está contenido dentro del enfoque Ecocéntrico' });
-add({ id: 'n-hid-reg', a: 'o:hid', b: 'o:reg', color: C.water, arrow: true, min: 9, max: 9, delay: 1.2, models: ['hid', 'reg'] });
-add({ id: 'n-reg-com', a: 'o:reg', b: 'o:com', color: C.green, arrow: true, min: 9, max: 9, delay: 1.5, models: ['reg', 'com'], label: 'transformación ecológica y económica' });
-add({ id: 'n-com-cir', a: 'o:com', b: 'o:cir', color: C.earth, arrow: true, min: 9, max: 9, delay: 1.8, models: ['com', 'cir'] });
-add({ id: 'n-soc-reg', a: 'o:soc', b: 'o:reg', color: C.social, arrow: true, min: 9, max: 9, delay: 2.0, models: ['soc', 'reg'], title: 'La restauración requiere co-ejecución comunitaria activa' });
-add({ id: 'n-soc-hid', a: 'o:soc', b: 'o:hid', color: C.social, arrow: true, min: 9, max: 9, delay: 2.2, models: ['soc', 'hid'], title: 'Mesas comunitarias protegen y vigilan las rondas de los humedales' });
-add({ id: 'n-soc-cir', a: 'o:soc', b: 'o:cir', color: C.social, arrow: true, min: 9, max: 9, delay: 2.4, models: ['soc', 'cir'], title: 'Los recicladores de oficio son los ejecutores esenciales de la circularidad' });
-add({ id: 'n-soc-lim', a: 'o:soc', b: 'o:lim', color: C.social, dashed: true, min: 9, max: 9, delay: 2.6, models: ['soc', 'lim'], title: 'Gobernanza policéntrica para legitimar límites sin caer en trampas punitivas' });
-
-// red propia: las mismas relaciones espaciales; las que unen dos puntos del territorio solo al explorar
+// Anclajes territoriales en la Red Propia para el modo explorar
 for (const o of CONNS.slice()) {
-  if (o.max === 9 || !(o.a.startsWith('g:') || o.b.startsWith('g:')) || o.a.startsWith('x:')) continue;
-  add({ ...o, id: o.id + '-n', a: o.a.startsWith('c:') ? 'o:' + o.a.split(':')[1] : o.a, min: 9, max: 9, exp: true });
+  if (o.max === 9 || !(o.a.startsWith('g:') || o.b.startsWith('g:'))) continue;
+  add({ ...o, id: o.id + '-net', a: o.a.startsWith('c:') ? 'o:' + o.a.split(':')[1] : o.a, min: 9, max: 9, exp: true });
 }
 
-// relaciones narradas por macromodelo (modo explorar)
-export const REL_TEXT: Record<ModelId, { rel: [ModelId, string][]; geo: GeoId[] }> = {
-  eco: { rel: [['hid', 'contiene al Hidrocéntrico'], ['reg', 'enmarca la regeneración'], ['com', 'enmarca el comercio ecológico'], ['cir', 'enmarca la circularidad'], ['soc', 'interdependencia de la política humana']], geo: ['burro', 'vaca', 'techo', 'corabastos'] },
-  hid: { rel: [['eco', 'está contenido en el Ecocéntrico'], ['reg', 'el agua soporta la regeneración'], ['soc', 'la comunidad custodia las rondas']], geo: ['burro', 'vaca', 'techo'] },
-  reg: { rel: [['hid', 'se apoya en la red hídrica'], ['com', 'transformación ecológica → económica'], ['soc', 'co-ejecución comunitaria de siembra y cuidado']], geo: ['fucha', 'hub', 'burro', 'vaca', 'techo'] },
-  com: { rel: [['reg', 'recibe la transformación ecológica'], ['cir', 'cierra ciclos productivos'], ['soc', 'organización gremial de economía popular']], geo: ['corabastos', 'patio'] },
-  cir: { rel: [['com', 'reincorpora residuos a la producción'], ['soc', 'recicladores como vectores operativos']], geo: ['corabastos'] },
-  lim: { rel: [['eco', 'condiciona al sistema completo'], ['com', 'ajusta actividades económicas'], ['cir', 'ajusta los ciclos'], ['soc', 'legitimidad para evitar evasión']], geo: ['cali', 'calle13', 'corabastos', 'aero', 'burro', 'techo'] },
-  bio: { rel: [['eco', 'criterio transversal de evaluación'], ['lim', 'orienta los límites'], ['soc', 'cultura comunitaria de protección de fauna']], geo: ['tingua', 'vuelo'] },
-  soc: { rel: [['hid', 'co-custodia comunitaria de humedales'], ['reg', 'vector de ejecución en la regeneración ambiental'], ['cir', 'operación del reciclaje en fuente'], ['com', 'alianza de proximidad Corabastos - economía popular'], ['lim', 'gobernanza policéntrica frente a la trampa punitiva'], ['bio', 'ética biocéntrica en la organización barrial']], geo: ['alcaldia', 'jac', 'colectivos', 'patio', 'corabastos', 'vaca', 'burro'] },
+// Relaciones narradas para el modo explorar (clic en cualquier nodo orbital)
+export const STAGE_RELATIONS: Record<SocialStageId, { rel: [SocialStageId, string][]; geo: GeoId[] }> = {
+  humana: {
+    rel: [
+      ['normativa', 'enmarca las capacidades de regulación'],
+      ['cotidiana', 'reconoce la agencia material en territorio'],
+      ['comunitaria', 'destaca el valor del tejido barrial'],
+      ['policentrica', 'orienta el orden hacia la co-custodia'],
+    ],
+    geo: ['alcaldia', 'jac', 'patio', 'vaca', 'corabastos'],
+  },
+  normativa: {
+    rel: [
+      ['humana', 'fundamento ético y social de la planeación'],
+      ['policentrica', 'transfiere capacidad vinculante de proximidad'],
+      ['brecha', 'el mando vertical genera la trampa de política'],
+    ],
+    geo: ['planeacion', 'alcaldia', 'idu'],
+  },
+  cotidiana: {
+    rel: [
+      ['humana', 'sujetos vivos de la apropiación espacial'],
+      ['comunitaria', 'articulación con JACs y colectivos'],
+      ['policentrica', 'recibe compensaciones e incentivos de custodia'],
+      ['conductas', 'adopta estados desde S1 hasta S4'],
+    ],
+    geo: ['patio', 'corabastos', 'vaca', 'burro'],
+  },
+  comunitaria: {
+    rel: [
+      ['normativa', 'interlocución técnica con entidades'],
+      ['cotidiana', 'legitimidad barrial directa'],
+      ['policentrica', 'núcleo mediador que amortigua la desconfianza'],
+    ],
+    geo: ['jac', 'colectivos'],
+  },
+  brecha: {
+    rel: [
+      ['normativa', 'origen en la imposición sin alternativas'],
+      ['cotidiana', 'resistencia y evasión forzada'],
+      ['policentrica', 'antítesis y salida constructiva'],
+    ],
+    geo: ['alcaldia', 'patio', 'vaca'],
+  },
+  policentrica: {
+    rel: [
+      ['normativa', 'apertura a convenios de co-manejo'],
+      ['comunitaria', 'empoderamiento del tejido vecinal'],
+      ['cotidiana', 'conversión de evasores en custodios'],
+      ['conductas', 'maximiza la adopción de S4'],
+    ],
+    geo: ['alcaldia', 'jac', 'colectivos', 'vaca', 'burro', 'patio'],
+  },
+  conductas: {
+    rel: [
+      ['policentrica', 'incentivos que tornan óptima la co-custodia'],
+      ['brecha', 'la coerción sin incentivos perpetúa S1'],
+      ['cotidiana', 'reflejo directo de la vida comunitaria'],
+    ],
+    geo: ['patio', 'vaca', 'burro', 'corabastos'],
+  },
+  dinamica: {
+    rel: [
+      ['conductas', 'simula transiciones estocásticas Boltzmann'],
+      ['policentrica', 'verifica el impacto de las políticas públicas'],
+      ['cotidiana', 'espacialización de agentes en Kennedy'],
+    ],
+    geo: ['vaca', 'burro', 'patio', 'corabastos', 'tintal'],
+  },
+  red: {
+    rel: [
+      ['policentrica', 'articulación integral del sistema social'],
+      ['comunitaria', 'red viva de gobernanza territorial'],
+    ],
+    geo: ['alcaldia', 'planeacion', 'jac', 'colectivos', 'patio', 'corabastos', 'vaca', 'burro'],
+  },
 };
-export const modelColor = (m: ModelId) => MODEL[m].color;
-export { GEO };
